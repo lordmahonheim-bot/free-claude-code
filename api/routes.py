@@ -12,6 +12,13 @@ from .models.anthropic import MessagesRequest, TokenCountRequest
 from .models.responses import ModelResponse, ModelsListResponse
 from .services import ClaudeProxyService
 
+# MEMORY: Import hooks
+try:
+    from memory.hooks import before_request, after_response
+    MEMORY_HOOKS_AVAILABLE = True
+except ImportError:
+    MEMORY_HOOKS_AVAILABLE = False
+
 router = APIRouter()
 
 
@@ -80,10 +87,21 @@ def _probe_response(allow: str) -> Response:
 async def create_message(
     request_data: MessagesRequest,
     service: ClaudeProxyService = Depends(get_proxy_service),
+    settings: Settings = Depends(get_settings),
     _auth=Depends(require_api_key),
 ):
-    """Create a message (always streaming)."""
-    return service.create_message(request_data)
+    """Create a message (always streaming) with memory."""
+    # MEMORY: Hook before processing
+    session_id = before_request(request_data, n_context=4) if MEMORY_HOOKS_AVAILABLE else None
+    model = getattr(request_data, "model", None) or settings.model
+    provider = settings.provider_type
+
+    response = service.create_message(request_data)
+
+    # MEMORY: Hook after processing
+    if MEMORY_HOOKS_AVAILABLE:
+        return after_response(session_id, response, request_data, model, provider)
+    return response
 
 
 @router.api_route("/v1/messages", methods=["HEAD", "OPTIONS"])
