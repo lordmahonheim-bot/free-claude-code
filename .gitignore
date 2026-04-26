@@ -12,3 +12,9 @@ debug-*.log
 .coverage
 llama_cache
 .smoke-results
+
+# Local persistent memory data
+memory_store/
+
+# Temporary local test script
+test_memory_live.py
