@@ -57,7 +57,7 @@ async def handle_stop_command(
     msg_id = await handler.platform.queue_send_message(
         incoming.chat_id,
         handler.format_status(
-            "⏹", "Stopped.", f"Cancelled {count} pending or active requests."
+            "⏹", "Arrêté.", f"{count} requête(s) en attente ou active(s) annulée(s)."
         ),
         fire_and_forget=False,
         message_thread_id=incoming.message_thread_id,
@@ -70,18 +70,18 @@ async def handle_stop_command(
 async def handle_stats_command(
     handler: ClaudeMessageHandler, incoming: IncomingMessage
 ) -> None:
-    """Handle /stats command."""
+    """Gère la commande /stats."""
     stats = handler.cli_manager.get_stats()
     tree_count = handler.tree_queue.get_tree_count()
     ctx = handler.get_render_ctx()
     msg_id = await handler.platform.queue_send_message(
         incoming.chat_id,
         "📊 "
-        + ctx.bold("Stats")
+        + ctx.bold("Statistiques")
         + "\n"
-        + ctx.escape_text(f"• Active CLI: {stats['active_sessions']}")
+        + ctx.escape_text(f"• CLI actifs : {stats['active_sessions']}")
         + "\n"
-        + ctx.escape_text(f"• Message Trees: {tree_count}"),
+        + ctx.escape_text(f"• Arbres de messages : {tree_count}"),
         fire_and_forget=False,
         message_thread_id=incoming.message_thread_id,
     )

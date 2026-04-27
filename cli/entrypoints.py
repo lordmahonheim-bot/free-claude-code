@@ -47,14 +47,14 @@ def init() -> None:
     env_file = config_dir / ".env"
 
     if env_file.exists():
-        print(f"Config already exists at {env_file}")
-        print("Delete it first if you want to reset to defaults.")
+        print(f"La configuration existe déjà à {env_file}")
+        print("Supprimez-la d'abord si vous voulez réinitialiser aux valeurs par défaut.")
         return
 
     config_dir.mkdir(parents=True, exist_ok=True)
     template = _load_env_template()
     env_file.write_text(template, encoding="utf-8")
-    print(f"Config created at {env_file}")
+    print(f"Configuration créée à {env_file}")
     print(
-        "Edit it to set your API keys and model preferences, then run: free-claude-code"
+        "Modifiez-la pour définir vos clés API et préférences de modèle, puis exécutez : free-claude-code"
     )

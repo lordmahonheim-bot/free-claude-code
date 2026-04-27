@@ -190,7 +190,7 @@ class TelegramPlatform(MessagingPlatform):
             target = self.allowed_user_id
             if target:
                 startup_text = (
-                    f"🚀 *{escape_md_v2('Claude Code Proxy is online!')}* "
+                    f"🚀 *{escape_md_v2('Proxy Claude Code en ligne !')}* "
                     f"{escape_md_v2('(Bot API)')}"
                 )
                 await self.send_message(

@@ -46,10 +46,10 @@ class MemoryCLI:
         total = self.storage.get_message_count()
         recent = self.search.recent_sessions(5)
 
-        print(f"\nMemory Statistics")
-        print(f"================")
-        print(f"Total messages: {total}")
-        print(f"Recent sessions: {len(recent)}")
+        print(f"\nStatistiques de la mémoire")
+        print(f"==========================")
+        print(f"Total des messages : {total}")
+        print(f"Sessions récentes : {len(recent)}")
         if recent:
             print(f"\nLatest session: {recent[0].get('session_id', 'N/A')[:8]}")
             print(f"  Created: {recent[0].get('created_at', 'N/A')}")
@@ -85,7 +85,7 @@ class MemoryCLI:
                 sid = s["session_id"]
                 messages = storage.get_session_messages(sid)
                 path = exporter.export_session(sid, messages)
-                print(f"Exported session {sid[:8]} to: {path}")
+                print(f"Session {sid[:8]} exportée vers : {path}")
 
     def run(self, args: list[str] = None) -> None:
         """Run CLI.
@@ -95,30 +95,30 @@ class MemoryCLI:
         """
         parser = argparse.ArgumentParser(
             prog="memory",
-            description="Memory management CLI for free-claude-code",
+            description="CLI de gestion de la mémoire pour free-claude-code",
         )
-        subparsers = parser.add_subparsers(dest="command", help="Commands")
+        subparsers = parser.add_subparsers(dest="command", help="Commandes")
 
         # Search command
-        search_parser = subparsers.add_parser("search", help="Search memory")
-        search_parser.add_argument("query", help="Search query")
+        search_parser = subparsers.add_parser("search", help="Rechercher dans la mémoire")
+        search_parser.add_argument("query", help="Terme de recherche")
         search_parser.add_argument(
-            "-l", "--limit", type=int, default=20, help="Result limit"
+            "-l", "--limit", type=int, default=20, help="Limite de résultats"
         )
 
         # Sessions command
-        sessions_parser = subparsers.add_parser("sessions", help="List sessions")
+        sessions_parser = subparsers.add_parser("sessions", help="Lister les sessions")
         sessions_parser.add_argument(
-            "-l", "--limit", type=int, default=10, help="Session limit"
+            "-l", "--limit", type=int, default=10, help="Limite de sessions"
         )
 
         # Stats command
-        subparsers.add_parser("stats", help="Show statistics")
+        subparsers.add_parser("stats", help="Afficher les statistiques")
 
         # Export command
-        export_parser = subparsers.add_parser("export", help="Export to Markdown")
+        export_parser = subparsers.add_parser("export", help="Exporter vers Markdown")
         export_parser.add_argument(
-            "session_id", nargs="?", help="Session ID (partial)"
+            "session_id", nargs="?", help="ID de session (partiel)"
         )
 
         parsed = parser.parse_args(args)
