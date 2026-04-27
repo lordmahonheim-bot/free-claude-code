@@ -91,6 +91,14 @@ async def create_message(
     _auth=Depends(require_api_key),
 ):
     """Create a message (always streaming) with memory."""
+    # MEMORY: Bonjour short-circuit - local synthesis before any provider call
+    if MEMORY_HOOKS_AVAILABLE:
+        from memory.hooks import _create_bonjour_response
+
+        bonjour_response = _create_bonjour_response(request_data)
+        if bonjour_response:
+            return bonjour_response
+
     # MEMORY: Hook before processing
     session_id = before_request(request_data, n_context=4) if MEMORY_HOOKS_AVAILABLE else None
     model = getattr(request_data, "model", None) or settings.model
