@@ -152,8 +152,18 @@ class ClaudeProxyService:
             )
             if self._settings.log_raw_api_payloads:
                 logger.debug(
-                    "FULL_PAYLOAD [{}]: {}", request_id, routed.request.model_dump()
+                    "FULL_PAYLOAD [{}]: {}",
+                    request_id,
+                    routed.request.model_dump(),
                 )
+            logger.debug(
+                "REQUEST_SHAPE: request_id={} model={} messages={} tools={} system_present={}",
+                request_id,
+                routed.request.model,
+                len(routed.request.messages),
+                len(routed.request.tools or []),
+                routed.request.system is not None,
+            )
 
             input_tokens = self._token_counter(
                 routed.request.messages, routed.request.system, routed.request.tools
@@ -171,7 +181,9 @@ class ClaudeProxyService:
             raise
         except Exception as e:
             _log_unexpected_service_exception(
-                self._settings, e, context="CREATE_MESSAGE_ERROR"
+                self._settings,
+                e,
+                context="CREATE_MESSAGE_ERROR",
             )
             raise HTTPException(
                 status_code=_http_status_for_unexpected_service_exception(e),

@@ -96,7 +96,7 @@ async def test_handle_message_stop_command(
     handler.stop_all_tasks.assert_called_once()
     mock_platform.queue_send_message.assert_called_once_with(
         incoming.chat_id,
-        "⏹ *Stopped\\.* Cancelled 5 pending or active requests\\.",
+        "⏹ *Arrêté\\.* 5 requête\\(s\\) en attente ou active\\(s\\) annulée\\(s\\)\\.",
         fire_and_forget=False,
         message_thread_id=None,
     )
@@ -174,7 +174,7 @@ async def test_handle_message_stats_command(
 
     mock_platform.queue_send_message.assert_called_once()
     args, kwargs = mock_platform.queue_send_message.call_args
-    assert "Active CLI: 2" in args[1]
+    assert "CLI actifs : 2" in args[1]
     assert kwargs["fire_and_forget"] is False
     assert kwargs.get("message_thread_id") is None
 

@@ -114,7 +114,7 @@ def test_user_facing_message_read_timeout_empty_string():
     """ReadTimeout wrapping TimeoutError should still produce readable text."""
     timeout_exc = ReadTimeout("")
     message = get_user_facing_error_message(timeout_exc, read_timeout_s=60)
-    assert message == "Provider request timed out after 60s."
+    assert message == "Délai dépassé pour la requête au fournisseur après 60s."
 
 
 def test_append_request_id_suffix():

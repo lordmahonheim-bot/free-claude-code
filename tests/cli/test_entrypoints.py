@@ -74,7 +74,7 @@ def test_init_skips_if_env_already_exists(tmp_path: Path) -> None:
     output, _ = _run_init(tmp_path)
 
     assert env_file.read_text("utf-8") == "existing content"
-    assert "already exists" in output
+    assert "existe déjà" in output
 
 
 def test_init_prints_next_step_hint(tmp_path: Path) -> None:

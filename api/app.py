@@ -96,11 +96,19 @@ def create_app() -> FastAPI:
         """Handle general errors and return Anthropic format."""
         settings = get_settings()
         if settings.log_api_error_tracebacks:
-            logger.error("General Error: {}", exc)
+            logger.error(
+                "GENERAL_ERROR: path={} method={} error_type={} error={}",
+                request.url.path,
+                request.method,
+                type(exc).__name__,
+                str(exc),
+            )
+            import traceback
+
             logger.error(traceback.format_exc())
         else:
             logger.error(
-                "General Error: path={} method={} exc_type={}",
+                "GENERAL_ERROR: path={} method={} error_type={}",
                 request.url.path,
                 request.method,
                 type(exc).__name__,

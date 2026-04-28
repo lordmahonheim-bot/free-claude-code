@@ -31,7 +31,7 @@ def get_user_facing_error_message(
     if isinstance(e, openai.AuthenticationError):
         return "Authentification du fournisseur échouée. Vérifiez votre clé API."
     if isinstance(e, openai.BadRequestError):
-        return "Requête invalide envoyée au fournisseur."
+        return "Invalid request sent to provider."
 
     name = type(e).__name__
     status_code = getattr(e, "status_code", None)
@@ -40,15 +40,15 @@ def get_user_facing_error_message(
     if isinstance(e, openai.AuthenticationError) or name == "AuthenticationError":
         return "Authentification du fournisseur échouée. Vérifiez votre clé API."
     if isinstance(e, openai.BadRequestError) or name == "InvalidRequestError":
-        return "Requête invalide envoyée au fournisseur."
+        return "Invalid request sent to provider."
     if name == "OverloadedError":
         return "Le fournisseur est actuellement surchargé. Veuillez réessayer."
     if name == "APIError":
         if status_code in (502, 503, 504):
             return "Le fournisseur est temporairement indisponible. Veuillez réessayer."
-        return "Échec de la requête API au fournisseur."
+        return "Provider API request failed."
     if name.endswith("ProviderError") or name == "ProviderError":
-        return "Échec de la requête au fournisseur."
+        return "Provider request failed."
 
     # Fallback final
     message = str(e).strip()

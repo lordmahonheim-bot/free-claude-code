@@ -163,13 +163,17 @@ class AppRuntime:
                 )
         except Exception as e:
             if self.settings.log_api_error_tracebacks:
-                logger.error("Failed to start messaging platform: {}", e)
+                logger.error(
+                    "MESSAGING_INIT_ERROR: exc_type={} error={}",
+                    type(e).__name__,
+                    str(e),
+                )
                 import traceback
 
                 logger.error(traceback.format_exc())
             else:
                 logger.error(
-                    "Failed to start messaging platform: exc_type={}",
+                    "MESSAGING_INIT_ERROR: exc_type={}",
                     type(e).__name__,
                 )
 

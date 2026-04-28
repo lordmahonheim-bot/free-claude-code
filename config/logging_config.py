@@ -99,7 +99,7 @@ def configure_logging(
     # Add file sink: JSON lines, DEBUG level, context vars at top level
     logger.add(
         log_file,
-        level="DEBUG",
+        level="INFO",
         format=_serialize_with_context,
         encoding="utf-8",
         mode="a",

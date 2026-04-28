@@ -173,4 +173,4 @@ async def test_discord_voice_disabled_sends_reply():
 
     await platform._on_discord_message(mock_message)
 
-    mock_message.reply.assert_called_once_with("Voice notes are disabled.")
+    mock_message.reply.assert_called_once_with("Les notes vocales sont désactivées.")
