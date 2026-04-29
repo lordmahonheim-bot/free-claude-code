@@ -217,3 +217,91 @@ def test_claude_proxy_service_uses_model_ring_when_rotation_enabled(settings):
     mock_provider.preflight_stream.assert_called_once()
     routed_request = mock_provider.preflight_stream.call_args.args[0]
     assert routed_request.model == "llama-3.3-70b-versatile"
+
+
+def test_claude_proxy_service_rotation_falls_back_after_preflight_provider_error(settings):
+    from unittest.mock import MagicMock
+
+    from api.model_rings import load_model_rings
+    from api.rotation_engine import RotationState
+    from api.services import ClaudeProxyService
+    from providers.exceptions import RateLimitError
+
+    settings.enable_provider_rotation = True
+    settings.provider_rotation_profile = "fast-resilient"
+    rings = load_model_rings("config/model_rings.yaml")
+
+    groq_provider = MagicMock()
+    groq_provider.preflight_stream.side_effect = RateLimitError("Too Many Requests")
+
+    google_provider = MagicMock()
+
+    async def fake_stream(*_args, **_kwargs):
+        yield "event: ping\ndata: {}\n\n"
+
+    google_provider.stream_response = fake_stream
+
+    seen_provider_ids = []
+
+    def provider_getter(provider_id):
+        seen_provider_ids.append(provider_id)
+        if provider_id == "groq":
+            return groq_provider
+        if provider_id == "google":
+            return google_provider
+        raise AssertionError(f"unexpected provider: {provider_id}")
+
+    service = ClaudeProxyService(
+        settings,
+        provider_getter=provider_getter,
+        model_rings_config=rings,
+    )
+    request = MessagesRequest(
+        model="claude-opus-4-20250514",
+        max_tokens=100,
+        messages=[Message(role="user", content="hello")],
+    )
+
+    service.create_message(request)
+
+    assert seen_provider_ids == ["groq", "google"]
+    groq_health = service._rotation_engine.health_for(
+        "groq/llama-3.3-70b-versatile"
+    )
+    assert groq_health.state == RotationState.COOLDOWN
+    google_provider.preflight_stream.assert_called_once()
+    routed_request = google_provider.preflight_stream.call_args.args[0]
+    assert routed_request.model == "gemini-2.5-flash"
+
+
+def test_claude_proxy_service_rotation_preserves_provider_error_when_all_candidates_fail(settings):
+    from unittest.mock import MagicMock
+
+    import pytest
+
+    from api.model_rings import load_model_rings
+    from api.services import ClaudeProxyService
+    from providers.exceptions import RateLimitError
+
+    settings.enable_provider_rotation = True
+    settings.provider_rotation_profile = "fast-resilient"
+    rings = load_model_rings("config/model_rings.yaml")
+
+    def provider_getter(_provider_id):
+        provider = MagicMock()
+        provider.preflight_stream.side_effect = RateLimitError("Too Many Requests")
+        return provider
+
+    service = ClaudeProxyService(
+        settings,
+        provider_getter=provider_getter,
+        model_rings_config=rings,
+    )
+    request = MessagesRequest(
+        model="claude-opus-4-20250514",
+        max_tokens=100,
+        messages=[Message(role="user", content="hello")],
+    )
+
+    with pytest.raises(RateLimitError):
+        service.create_message(request)

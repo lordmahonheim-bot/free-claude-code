@@ -19,7 +19,7 @@ from providers.exceptions import InvalidRequestError, ProviderError
 
 from .model_router import ModelRouter
 from .model_rings import ModelRingsConfig, load_model_rings
-from .rotation_engine import ProviderRotationEngine
+from .rotation_engine import ProviderRotationEngine, failure_category_from_exception
 from .rotation_router import RotationRouter
 from .models.anthropic import MessagesRequest, TokenCountRequest
 from .models.responses import TokenCountResponse
@@ -134,6 +134,70 @@ class ClaudeProxyService:
         ring = self._model_rings_config.get_ring(profile.default_ring)
         return self._rotation_router.route_token_count_request(routed, ring)
 
+    def _provider_stream_for_routed_request(
+        self,
+        routed,
+        *,
+        input_tokens: int,
+        request_id: str,
+    ):
+        """Build a provider stream for one routed request."""
+        provider = self._provider_getter(routed.resolved.provider_id)
+        provider.preflight_stream(
+            routed.request,
+            thinking_enabled=routed.resolved.thinking_enabled,
+        )
+        return provider.stream_response(
+            routed.request,
+            input_tokens=input_tokens,
+            request_id=request_id,
+            thinking_enabled=routed.resolved.thinking_enabled,
+        )
+
+    def _provider_stream_with_rotation_fallback(
+        self,
+        routed,
+        *,
+        input_tokens: int,
+        request_id: str,
+    ):
+        """Build a provider stream, falling back before SSE streaming starts."""
+        if not self._settings.enable_provider_rotation:
+            return self._provider_stream_for_routed_request(
+                routed,
+                input_tokens=input_tokens,
+                request_id=request_id,
+            )
+        if self._model_rings_config is None:
+            raise RuntimeError("Provider rotation is enabled but model rings are not loaded")
+
+        profile = self._model_rings_config.get_profile(
+            self._settings.provider_rotation_profile
+        )
+        ring = self._model_rings_config.get_ring(profile.default_ring)
+        last_error: ProviderError | None = None
+
+        for _ in range(len(ring.candidates)):
+            rotated = self._rotation_router.route_messages_request(routed, ring)
+            try:
+                stream = self._provider_stream_for_routed_request(
+                    rotated,
+                    input_tokens=input_tokens,
+                    request_id=request_id,
+                )
+                self._rotation_engine.mark_success(rotated.resolved.provider_model_ref)
+                return stream
+            except ProviderError as exc:
+                last_error = exc
+                self._rotation_engine.mark_failure(
+                    rotated.resolved.provider_model_ref,
+                    failure_category_from_exception(exc),
+                    message=type(exc).__name__,
+                )
+
+        assert last_error is not None
+        raise last_error
+
     def create_message(self, request_data: MessagesRequest) -> object:
         """Create a message response or streaming response."""
         try:
@@ -174,12 +238,6 @@ class ClaudeProxyService:
                 return optimized
             logger.debug("No optimization matched, routing to provider")
 
-            provider = self._provider_getter(routed.resolved.provider_id)
-            provider.preflight_stream(
-                routed.request,
-                thinking_enabled=routed.resolved.thinking_enabled,
-            )
-
             request_id = f"req_{uuid.uuid4().hex[:12]}"
             logger.info(
                 "API_REQUEST: request_id={} model={} messages={}",
@@ -206,11 +264,10 @@ class ClaudeProxyService:
                 routed.request.messages, routed.request.system, routed.request.tools
             )
             return anthropic_sse_streaming_response(
-                provider.stream_response(
-                    routed.request,
+                self._provider_stream_with_rotation_fallback(
+                    routed,
                     input_tokens=input_tokens,
                     request_id=request_id,
-                    thinking_enabled=routed.resolved.thinking_enabled,
                 ),
             )
 
