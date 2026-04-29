@@ -101,6 +101,9 @@ class Settings(BaseSettings):
     # ==================== Groq Config ====================
     groq_api_key: str = Field(default="", validation_alias="GROQ_API_KEY")
 
+    # ==================== Cerebras Config ====================
+    cerebras_api_key: str = Field(default="", validation_alias="CEREBRAS_API_KEY")
+
     # ==================== DeepSeek Config ====================
     deepseek_api_key: str = Field(default="", validation_alias="DEEPSEEK_API_KEY")
 
@@ -152,6 +155,7 @@ class Settings(BaseSettings):
     nvidia_nim_proxy: str = Field(default="", validation_alias="NVIDIA_NIM_PROXY")
     open_router_proxy: str = Field(default="", validation_alias="OPENROUTER_PROXY")
     groq_proxy: str = Field(default="", validation_alias="GROQ_PROXY")
+    cerebras_proxy: str = Field(default="", validation_alias="CEREBRAS_PROXY")
     lmstudio_proxy: str = Field(default="", validation_alias="LMSTUDIO_PROXY")
     llamacpp_proxy: str = Field(default="", validation_alias="LLAMACPP_PROXY")
 

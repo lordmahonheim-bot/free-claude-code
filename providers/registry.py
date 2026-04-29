@@ -37,6 +37,12 @@ def _create_groq(config: ProviderConfig, _settings: Settings) -> BaseProvider:
     return GroqProvider(config)
 
 
+def _create_cerebras(config: ProviderConfig, _settings: Settings) -> BaseProvider:
+    from providers.cerebras import CerebrasProvider
+
+    return CerebrasProvider(config)
+
+
 def _create_deepseek(config: ProviderConfig, _settings: Settings) -> BaseProvider:
     from providers.deepseek import DeepSeekProvider
 
@@ -65,6 +71,7 @@ PROVIDER_FACTORIES: dict[str, ProviderFactory] = {
     "nvidia_nim": _create_nvidia_nim,
     "open_router": _create_open_router,
     "groq": _create_groq,
+    "cerebras": _create_cerebras,
     "deepseek": _create_deepseek,
     "lmstudio": _create_lmstudio,
     "llamacpp": _create_llamacpp,
