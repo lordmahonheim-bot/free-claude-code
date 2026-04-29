@@ -72,13 +72,13 @@ class TestContentBlockManager:
         mgr.tool_states[
             0
         ].task_arg_buffer = (
-            '{"api_key": "sk-live-super-secret-do-not-log"}not_valid_json'
+            '{"api_key": "SECRET_CANARY_DO_NOT_LOG"}not_valid_json'
         )
         with caplog.at_level("WARNING"):
             out = mgr.flush_task_arg_buffers()
         assert out == [(0, "{}")]
         text = " | ".join(r.message for r in caplog.records)
-        assert "sk-live-super-secret" not in text
+        assert "SECRET_CANARY_DO_NOT_LOG" not in text
         assert "buffer_sha256_prefix=" in text
 
 
