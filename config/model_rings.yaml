@@ -1,0 +1,128 @@
+# Provider Rotation model rings.
+#
+# This file is intentionally inactive unless ENABLE_PROVIDER_ROTATION=true.
+# It defines task-oriented candidate rings used by the experimental rotation
+# engine. Model availability must be validated by live smoke tests before
+# production use.
+
+profiles:
+  stable-agentic:
+    default_ring: code_agentic
+    weights:
+      quality: 0.35
+      stability: 0.25
+      tool_use: 0.20
+      latency: 0.10
+      cost: 0.05
+      privacy: 0.05
+
+  code-max:
+    default_ring: code_agentic
+    weights:
+      quality: 0.45
+      tool_use: 0.25
+      stability: 0.15
+      latency: 0.05
+      cost: 0.05
+      privacy: 0.05
+
+  fast-resilient:
+    default_ring: fast
+    weights:
+      latency: 0.40
+      stability: 0.25
+      tool_use: 0.15
+      quality: 0.10
+      cost: 0.05
+      privacy: 0.05
+
+  long-context-docs:
+    default_ring: long_context
+    weights:
+      context: 0.35
+      quality: 0.25
+      stability: 0.15
+      tool_use: 0.10
+      latency: 0.05
+      cost: 0.05
+      privacy: 0.05
+
+  private-local:
+    default_ring: private_local
+    weights:
+      privacy: 0.60
+      stability: 0.20
+      latency: 0.10
+      quality: 0.05
+      tool_use: 0.05
+
+rings:
+  code_agentic:
+    - model_ref: nvidia_nim/moonshotai/kimi-k2.5
+      priority: 100
+      weight: 1.0
+      capabilities: [chat, streaming, tools, thinking]
+    - model_ref: open_router/deepseek/deepseek-v4-pro
+      priority: 95
+      weight: 1.0
+      capabilities: [chat, streaming, tools, thinking, native_anthropic]
+    - model_ref: google/gemini-2.5-flash
+      priority: 80
+      weight: 1.0
+      capabilities: [chat, streaming, tools, rate_limit]
+
+  reasoning:
+    - model_ref: open_router/deepseek/deepseek-v4-pro
+      priority: 100
+      weight: 1.0
+      capabilities: [chat, streaming, thinking, native_anthropic]
+    - model_ref: cerebras/gpt-oss-120b
+      priority: 90
+      weight: 1.0
+      capabilities: [chat, streaming, tools, rate_limit]
+    - model_ref: google/gemini-2.5-flash
+      priority: 80
+      weight: 1.0
+      capabilities: [chat, streaming, tools, rate_limit]
+
+  fast:
+    - model_ref: groq/llama-3.3-70b-versatile
+      priority: 100
+      weight: 1.0
+      capabilities: [chat, streaming, tools, rate_limit]
+    - model_ref: google/gemini-2.5-flash
+      priority: 90
+      weight: 1.0
+      capabilities: [chat, streaming, tools, rate_limit]
+    - model_ref: cerebras/llama3.1-8b
+      priority: 80
+      weight: 1.0
+      capabilities: [chat, streaming, tools, rate_limit]
+
+  long_context:
+    - model_ref: google/gemini-2.5-flash
+      priority: 100
+      weight: 1.0
+      capabilities: [chat, streaming, tools, rate_limit, multimodal]
+    - model_ref: open_router/deepseek/deepseek-v4-pro
+      priority: 90
+      weight: 1.0
+      capabilities: [chat, streaming, tools, thinking, native_anthropic]
+    - model_ref: nvidia_nim/moonshotai/kimi-k2.5
+      priority: 80
+      weight: 1.0
+      capabilities: [chat, streaming, tools, thinking]
+
+  private_local:
+    - model_ref: ollama/qwen-coder-local
+      priority: 100
+      weight: 1.0
+      capabilities: [chat, streaming, tools, local]
+    - model_ref: lmstudio/qwen-coder-local
+      priority: 90
+      weight: 1.0
+      capabilities: [chat, streaming, tools, native_anthropic, local]
+    - model_ref: llamacpp/qwen-coder-local
+      priority: 80
+      weight: 1.0
+      capabilities: [chat, streaming, tools, native_anthropic, local]
