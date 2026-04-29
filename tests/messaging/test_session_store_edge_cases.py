@@ -103,10 +103,16 @@ class TestSessionStoreAtomicWrites:
 
         store.save_tree("r2", {"root_id": "r2", "nodes": {"r2": {}}})
 
-        with patch(
-            "messaging.session.os.replace", side_effect=OSError("replace failed")
+        with (
+            patch(
+                "messaging.session.os.replace",
+                side_effect=OSError("replace failed"),
+            ),
+            patch("messaging.session.logger.error") as mock_log_error,
         ):
             store.flush_pending_save()
+
+        mock_log_error.assert_called_once()
 
         with open(path, encoding="utf-8") as f:
             disk_after_failed = f.read()
