@@ -657,3 +657,27 @@ class TestPerModelMapping:
         assert Settings.parse_model_name("lmstudio/qwen") == "qwen"
         assert Settings.parse_model_name("llamacpp/model") == "model"
         assert Settings.parse_model_name("ollama/llama3.1") == "llama3.1"
+
+
+def test_provider_rotation_defaults():
+    from config.settings import Settings
+
+    settings = Settings()
+
+    assert settings.enable_provider_rotation is False
+    assert settings.provider_rotation_profile == "stable-agentic"
+    assert settings.provider_rotation_config == "config/model_rings.yaml"
+
+
+def test_provider_rotation_env_overrides(monkeypatch):
+    from config.settings import Settings
+
+    monkeypatch.setenv("ENABLE_PROVIDER_ROTATION", "true")
+    monkeypatch.setenv("PROVIDER_ROTATION_PROFILE", "code-max")
+    monkeypatch.setenv("PROVIDER_ROTATION_CONFIG", "config/custom_model_rings.yaml")
+
+    settings = Settings()
+
+    assert settings.enable_provider_rotation is True
+    assert settings.provider_rotation_profile == "code-max"
+    assert settings.provider_rotation_config == "config/custom_model_rings.yaml"

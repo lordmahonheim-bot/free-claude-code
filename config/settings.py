@@ -154,6 +154,19 @@ class Settings(BaseSettings):
     model_sonnet: str | None = Field(default=None, validation_alias="MODEL_SONNET")
     model_haiku: str | None = Field(default=None, validation_alias="MODEL_HAIKU")
 
+    # ==================== Experimental Provider Rotation ====================
+    # Disabled by default. When enabled later, Claude model routes can be resolved
+    # through model rings and provider health instead of one fixed MODEL_* value.
+    enable_provider_rotation: bool = Field(
+        default=False, validation_alias="ENABLE_PROVIDER_ROTATION"
+    )
+    provider_rotation_profile: str = Field(
+        default="stable-agentic", validation_alias="PROVIDER_ROTATION_PROFILE"
+    )
+    provider_rotation_config: str = Field(
+        default="config/model_rings.yaml", validation_alias="PROVIDER_ROTATION_CONFIG"
+    )
+
     # ==================== Per-Provider Proxy ====================
     nvidia_nim_proxy: str = Field(default="", validation_alias="NVIDIA_NIM_PROXY")
     open_router_proxy: str = Field(default="", validation_alias="OPENROUTER_PROXY")
