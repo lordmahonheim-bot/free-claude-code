@@ -39,3 +39,18 @@ Only remove files intentionally created for tests:
     rm -f /home/lord-mahonheim/projects/free-claude-code/workbench/inbox/test_*
     rm -f /home/lord-mahonheim/projects/free-claude-code/workbench/processing/test_*
     rm -f /home/lord-mahonheim/projects/free-claude-code/workbench/reports/test_*
+## Example 6 — Generate a Markdown deliverable
+
+After processing files, generate a local Markdown deliverable from extracted text files:
+
+    cd /home/lord-mahonheim/projects/free-claude-code && uv run cfc-doc deliver
+
+The generated file is written to:
+
+    /home/lord-mahonheim/projects/free-claude-code/workbench/output
+
+## Example 7 — Limit deliverable preview size
+
+For large extracted texts, limit the preview size per file:
+
+    cd /home/lord-mahonheim/projects/free-claude-code && uv run cfc-doc deliver --max-chars 2000

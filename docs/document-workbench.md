@@ -1,6 +1,6 @@
 # C-f-C Document Workbench
 
-The Document Workbench is a local-first utility for preparing files before analysis, synthesis, or future deliverable generation.
+The Document Workbench is a local-first utility for preparing files before analysis, synthesis, or deliverable generation.
 
 It reads source files from:
 
@@ -39,7 +39,7 @@ Audio and video files are detected, but not transcribed in V1.1.
 - workbench/inbox: source files to process
 - workbench/processing: extracted text files
 - workbench/reports: Markdown reports
-- workbench/output: reserved for future generated deliverables
+- workbench/output: generated Markdown deliverables
 - workbench/archive: reserved for future archiving
 
 The workbench directory is ignored by Git, except for workbench/.gitignore.
@@ -58,6 +58,14 @@ Limit extracted text per file:
 
     uv run cfc-doc process --max-chars 20000
 
+Generate a simple Markdown deliverable from extracted texts:
+
+    uv run cfc-doc deliver
+
+Limit preview size per processed text file in the deliverable:
+
+    uv run cfc-doc deliver --max-chars 2000
+
 ## Output per processed file
 
 For each processed file, C-f-C writes:
@@ -67,10 +75,24 @@ For each processed file, C-f-C writes:
 
 Each report includes source path, detected type, file size, metadata, warnings, preview, and path to the complete extracted text.
 
+## V1.2 deliverables
+
+The `deliver` command reads `.txt` files from `workbench/processing` and writes a Markdown deliverable into `workbench/output`.
+
+The generated deliverable includes:
+
+- generation date
+- source file index
+- extractive preview per file
+- basic character statistics
+- V1.2 limitations
+
+This deliverable is local and extractive. It does not call an external model and does not perform advanced rewriting.
+
 ## Safety notes
 
 - .env files are skipped by design.
 - Files remain local.
 - OCR is not included in V1.1.
 - Audio/video transcription is not included in V1.1.
-- OCR, visual analysis, transcription, and document sub-agents belong to later roadmap stages.
+- OCR, visual analysis, transcription, AI synthesis, and document sub-agents belong to later roadmap stages.

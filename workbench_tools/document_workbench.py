@@ -423,6 +423,90 @@ def process_files(max_chars: int) -> int:
     return 0
 
 
+def iter_processing_text_files() -> Iterable[Path]:
+    ensure_dirs()
+    for path in sorted(PROCESSING.glob("*.txt")):
+        if path.is_file() and not path.name.startswith("."):
+            yield path
+
+
+def build_deliverable(max_chars: int) -> Path | None:
+    files = list(iter_processing_text_files())
+    if not files:
+        print(f"Aucun texte extrait dans {PROCESSING}")
+        return None
+
+    timestamp = datetime.now().strftime("%Y%m%d-%H%M%S-%f")
+    output_path = OUTPUT / f"document_workbench_deliverable_{timestamp}.md"
+
+    total_chars = 0
+    sections = [
+        "# Livrable documentaire C-f-C",
+        "",
+        f"- Genere : `{datetime.now().isoformat(timespec="seconds")}`",
+        f"- Fichiers sources : `{len(files)}`",
+        f"- Source : `{PROCESSING}`",
+        "",
+        "## Index des fichiers",
+        "",
+    ]
+
+    for index, file in enumerate(files, start=1):
+        text = safe_read_text(file)
+        total_chars += len(text)
+        sections.append(f"{index}. `{file.relative_to(PROJECT_ROOT)}` - {human_size(file)} - {len(text)} caracteres")
+
+    sections.extend([
+        "",
+        "## Synthese extractive par fichier",
+        "",
+    ])
+
+    for index, file in enumerate(files, start=1):
+        text = safe_read_text(file).strip()
+        preview = truncate(text, max_chars=max_chars)
+        sections.extend([
+            f"### {index}. {file.name}",
+            "",
+            f"- Fichier : `{file.relative_to(PROJECT_ROOT)}`",
+            f"- Taille : `{human_size(file)}`",
+            f"- Caracteres : `{len(text)}`",
+            "",
+            "```text",
+            preview,
+            "```",
+            "",
+        ])
+
+    sections.extend([
+        "## Statistiques globales",
+        "",
+        f"- Nombre de fichiers : `{len(files)}`",
+        f"- Total caracteres : `{total_chars}`",
+        "",
+        "## Limites V1.2",
+        "",
+        "- Livrable local extractif uniquement.",
+        "- Pas de synthese IA externe.",
+        "- Pas de reecriture stylistique avancee.",
+        "- OCR, transcription et sous-agents documentaires restent reserves aux phases futures.",
+        "",
+    ])
+
+    output_path.write_text("\n".join(sections), encoding="utf-8")
+    return output_path
+
+
+def deliver_files(max_chars: int) -> int:
+    output_path = build_deliverable(max_chars=max_chars)
+    if output_path is None:
+        return 0
+
+    print("OK livrable genere")
+    print(f"  fichier: {output_path.relative_to(PROJECT_ROOT)}")
+    return 0
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(
         description=(
@@ -453,6 +537,21 @@ def main() -> int:
         help="Maximum number of extracted characters per file. Default: 80000.",
     )
 
+    deliver_parser = subparsers.add_parser(
+        "deliver",
+        help="Generate a simple Markdown deliverable from workbench/processing.",
+        description=(
+            "Read extracted .txt files from workbench/processing and write a "
+            "simple Markdown deliverable into workbench/output."
+        ),
+    )
+    deliver_parser.add_argument(
+        "--max-chars",
+        type=int,
+        default=4000,
+        help="Maximum preview characters per processed text file. Default: 4000.",
+    )
+
     args = parser.parse_args()
 
     ensure_dirs()
@@ -461,6 +560,8 @@ def main() -> int:
         return list_inbox()
     if args.command == "process":
         return process_files(max_chars=args.max_chars)
+    if args.command == "deliver":
+        return deliver_files(max_chars=args.max_chars)
 
     raise ValueError(args.command)
 

@@ -309,8 +309,10 @@ Basic usage:
     uv run cfc-doc list
     uv run cfc-doc process
     uv run cfc-doc process --max-chars 20000
+    uv run cfc-doc deliver
+    uv run cfc-doc deliver --max-chars 2000
 
-Supported V1.1 inputs include text-like files, PDF, DOCX, XLSX, PPTX, and image metadata. Audio/video files are detected but not transcribed yet.
+Supported inputs include text-like files, PDF, DOCX, XLSX, PPTX, and image metadata. Audio/video files are detected but not transcribed yet. V1.2 can also generate a simple local Markdown deliverable from extracted text files in `workbench/processing`, written to `workbench/output`.
 
 See:
 
