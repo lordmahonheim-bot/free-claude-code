@@ -43,6 +43,12 @@ def _create_cerebras(config: ProviderConfig, _settings: Settings) -> BaseProvide
     return CerebrasProvider(config)
 
 
+def _create_google(config: ProviderConfig, _settings: Settings) -> BaseProvider:
+    from providers.google import GoogleProvider
+
+    return GoogleProvider(config)
+
+
 def _create_deepseek(config: ProviderConfig, _settings: Settings) -> BaseProvider:
     from providers.deepseek import DeepSeekProvider
 
@@ -72,6 +78,7 @@ PROVIDER_FACTORIES: dict[str, ProviderFactory] = {
     "open_router": _create_open_router,
     "groq": _create_groq,
     "cerebras": _create_cerebras,
+    "google": _create_google,
     "deepseek": _create_deepseek,
     "lmstudio": _create_lmstudio,
     "llamacpp": _create_llamacpp,

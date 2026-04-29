@@ -20,6 +20,7 @@ DEEPSEEK_DEFAULT_BASE = DEEPSEEK_ANTHROPIC_DEFAULT_BASE
 OPENROUTER_DEFAULT_BASE = "https://openrouter.ai/api/v1"
 GROQ_DEFAULT_BASE = "https://api.groq.com/openai/v1"
 CEREBRAS_DEFAULT_BASE = "https://api.cerebras.ai/v1"
+GOOGLE_DEFAULT_BASE = "https://generativelanguage.googleapis.com/v1beta/openai"
 LMSTUDIO_DEFAULT_BASE = "http://localhost:1234/v1"
 LLAMACPP_DEFAULT_BASE = "http://localhost:8080/v1"
 OLLAMA_DEFAULT_BASE = "http://localhost:11434"
@@ -81,6 +82,16 @@ PROVIDER_CATALOG: dict[str, ProviderDescriptor] = {
         default_base_url=CEREBRAS_DEFAULT_BASE,
         proxy_attr="cerebras_proxy",
         capabilities=("chat", "streaming", "tools", "rate_limit"),
+    ),
+    "google": ProviderDescriptor(
+        provider_id="google",
+        transport_type="openai_chat",
+        credential_env="GOOGLE_API_KEY",
+        credential_url="https://aistudio.google.com/app/apikey",
+        credential_attr="google_api_key",
+        default_base_url=GOOGLE_DEFAULT_BASE,
+        proxy_attr="google_proxy",
+        capabilities=("chat", "streaming", "tools", "rate_limit", "multimodal"),
     ),
     "deepseek": ProviderDescriptor(
         provider_id="deepseek",
