@@ -4,7 +4,7 @@ from api.model_router import ModelRouter, ResolvedModel
 from api.models.anthropic import Message, MessagesRequest, TokenCountRequest
 from api.rotation_router import RotationRouter, resolved_from_candidate
 from config.settings import Settings
-from providers.rotation import (
+from api.rotation_engine import (
     FailureCategory,
     ModelCandidate,
     ModelRing,

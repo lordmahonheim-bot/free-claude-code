@@ -14,7 +14,7 @@ from api.model_router import (
     RoutedMessagesRequest,
     RoutedTokenCountRequest,
 )
-from providers.rotation import ModelCandidate, ModelRing, ProviderRotationEngine
+from api.rotation_engine import ModelCandidate, ModelRing, ProviderRotationEngine
 
 
 def resolved_from_candidate(

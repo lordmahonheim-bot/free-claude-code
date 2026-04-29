@@ -9,7 +9,7 @@ from providers.exceptions import (
     RateLimitError,
 )
 
-from providers.rotation import (
+from api.rotation_engine import (
     FailureCategory,
     failure_category_from_exception,
     ModelCandidate,
