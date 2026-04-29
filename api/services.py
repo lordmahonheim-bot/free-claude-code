@@ -18,6 +18,9 @@ from providers.base import BaseProvider
 from providers.exceptions import InvalidRequestError, ProviderError
 
 from .model_router import ModelRouter
+from .model_rings import ModelRingsConfig, load_model_rings
+from .rotation_engine import ProviderRotationEngine
+from .rotation_router import RotationRouter
 from .models.anthropic import MessagesRequest, TokenCountRequest
 from .models.responses import TokenCountResponse
 from .optimization_handlers import try_optimizations
@@ -92,11 +95,44 @@ class ClaudeProxyService:
         provider_getter: ProviderGetter,
         model_router: ModelRouter | None = None,
         token_counter: TokenCounter = get_token_count,
+        rotation_engine: ProviderRotationEngine | None = None,
+        model_rings_config: ModelRingsConfig | None = None,
     ):
         self._settings = settings
         self._provider_getter = provider_getter
         self._model_router = model_router or ModelRouter(settings)
         self._token_counter = token_counter
+        self._rotation_engine = rotation_engine or ProviderRotationEngine()
+        self._model_rings_config = model_rings_config
+        if self._settings.enable_provider_rotation and self._model_rings_config is None:
+            self._model_rings_config = load_model_rings(
+                self._settings.provider_rotation_config
+            )
+        self._rotation_router = RotationRouter(self._rotation_engine)
+
+    def _apply_provider_rotation_to_messages(self, routed):
+        """Apply provider rotation to a routed messages request when enabled."""
+        if not self._settings.enable_provider_rotation:
+            return routed
+        if self._model_rings_config is None:
+            raise RuntimeError("Provider rotation is enabled but model rings are not loaded")
+        profile = self._model_rings_config.get_profile(
+            self._settings.provider_rotation_profile
+        )
+        ring = self._model_rings_config.get_ring(profile.default_ring)
+        return self._rotation_router.route_messages_request(routed, ring)
+
+    def _apply_provider_rotation_to_token_count(self, routed):
+        """Apply provider rotation to a routed token-count request when enabled."""
+        if not self._settings.enable_provider_rotation:
+            return routed
+        if self._model_rings_config is None:
+            raise RuntimeError("Provider rotation is enabled but model rings are not loaded")
+        profile = self._model_rings_config.get_profile(
+            self._settings.provider_rotation_profile
+        )
+        ring = self._model_rings_config.get_ring(profile.default_ring)
+        return self._rotation_router.route_token_count_request(routed, ring)
 
     def create_message(self, request_data: MessagesRequest) -> object:
         """Create a message response or streaming response."""
@@ -104,6 +140,7 @@ class ClaudeProxyService:
             _require_non_empty_messages(request_data.messages)
 
             routed = self._model_router.resolve_messages_request(request_data)
+            routed = self._apply_provider_rotation_to_messages(routed)
             if routed.resolved.provider_id in _OPENAI_CHAT_UPSTREAM_IDS:
                 tool_err = openai_chat_upstream_server_tool_error(
                     routed.request,
@@ -197,6 +234,7 @@ class ClaudeProxyService:
             try:
                 _require_non_empty_messages(request_data.messages)
                 routed = self._model_router.resolve_token_count_request(request_data)
+                routed = self._apply_provider_rotation_to_token_count(routed)
                 tokens = self._token_counter(
                     routed.request.messages, routed.request.system, routed.request.tools
                 )

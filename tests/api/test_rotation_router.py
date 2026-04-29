@@ -152,3 +152,68 @@ def test_rotation_router_raises_when_ring_has_no_available_candidate(settings):
 
     with pytest.raises(RuntimeError, match="No available provider/model candidate"):
         RotationRouter(engine).route_messages_request(base_routed, ring, now=100.0)
+
+
+def test_claude_proxy_service_keeps_existing_route_when_rotation_disabled(settings):
+    from unittest.mock import MagicMock
+
+    from api.services import ClaudeProxyService
+
+    settings.enable_provider_rotation = False
+    mock_provider = MagicMock()
+
+    async def fake_stream(*_args, **_kwargs):
+        yield "event: ping\ndata: {}\n\n"
+
+    mock_provider.stream_response = fake_stream
+
+    seen_provider_ids = []
+
+    service = ClaudeProxyService(
+        settings,
+        provider_getter=lambda provider_id: seen_provider_ids.append(provider_id) or mock_provider,
+    )
+    request = MessagesRequest(
+        model="claude-opus-4-20250514",
+        max_tokens=100,
+        messages=[Message(role="user", content="hello")],
+    )
+
+    service.create_message(request)
+
+    assert seen_provider_ids == ["nvidia_nim"]
+
+
+def test_claude_proxy_service_uses_model_ring_when_rotation_enabled(settings):
+    from unittest.mock import MagicMock
+
+    from api.model_rings import load_model_rings
+    from api.services import ClaudeProxyService
+
+    settings.enable_provider_rotation = True
+    settings.provider_rotation_profile = "fast-resilient"
+    mock_provider = MagicMock()
+
+    async def fake_stream(*_args, **_kwargs):
+        yield "event: ping\ndata: {}\n\n"
+
+    mock_provider.stream_response = fake_stream
+
+    seen_provider_ids = []
+    service = ClaudeProxyService(
+        settings,
+        provider_getter=lambda provider_id: seen_provider_ids.append(provider_id) or mock_provider,
+        model_rings_config=load_model_rings("config/model_rings.yaml"),
+    )
+    request = MessagesRequest(
+        model="claude-opus-4-20250514",
+        max_tokens=100,
+        messages=[Message(role="user", content="hello")],
+    )
+
+    service.create_message(request)
+
+    assert seen_provider_ids == ["groq"]
+    mock_provider.preflight_stream.assert_called_once()
+    routed_request = mock_provider.preflight_stream.call_args.args[0]
+    assert routed_request.model == "llama-3.3-70b-versatile"
