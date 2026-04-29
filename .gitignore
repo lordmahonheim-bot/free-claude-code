@@ -21,3 +21,7 @@ test_memory_live.py
 
 # Local env backups
 .env.backup-*
+
+# Local env profiles and backups
+.env.*
+!.env.example
