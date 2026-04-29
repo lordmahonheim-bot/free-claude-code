@@ -11,6 +11,7 @@ from __future__ import annotations
 import time
 from dataclasses import dataclass, field
 from enum import Enum
+from typing import Protocol
 
 
 class RotationState(str, Enum):
@@ -159,13 +160,47 @@ class ModelRing:
             raise ValueError("ring must contain at least one candidate")
 
 
+class RotationHealthStoreProtocol(Protocol):
+    """Storage protocol for durable provider rotation health."""
+
+    def load(self, *, now: float | None = None) -> dict[str, HealthRecord]:
+        """Load persisted health records."""
+
+    def save(
+        self,
+        health: dict[str, HealthRecord],
+        *,
+        now: float | None = None,
+    ) -> None:
+        """Persist the current health snapshot."""
+
+    def record_success_event(self, model_ref: str, record: HealthRecord) -> None:
+        """Append a success event."""
+
+    def record_failure_event(
+        self,
+        model_ref: str,
+        record: HealthRecord,
+        *,
+        failure_category: FailureCategory | None,
+        error_type: str | None,
+    ) -> None:
+        """Append a failure event."""
+
+
 @dataclass(slots=True)
 class ProviderRotationEngine:
     """Select candidates and update their runtime health."""
 
     cooldown_seconds: float = 60.0
     degraded_penalty: float = 25.0
+    health_store: RotationHealthStoreProtocol | None = None
     _health: dict[str, HealthRecord] = field(default_factory=dict)
+
+    def __post_init__(self) -> None:
+        if self.health_store is None or self._health:
+            return
+        self._health.update(self.health_store.load())
 
     def health_for(self, model_ref: str) -> HealthRecord:
         """Return the mutable health record for a model reference."""
@@ -197,6 +232,7 @@ class ProviderRotationEngine:
         health.last_failure = None
         health.cooldown_until = 0.0
         health.state = RotationState.ACTIVE
+        self._persist_success(model_ref, health)
 
     def mark_failure(
         self,
@@ -221,6 +257,7 @@ class ProviderRotationEngine:
         }:
             health.state = RotationState.DISABLED
             health.cooldown_until = 0.0
+            self._persist_failure(model_ref, health, category)
             return
 
         if category in {
@@ -232,6 +269,7 @@ class ProviderRotationEngine:
         }:
             health.state = RotationState.COOLDOWN
             health.cooldown_until = current + self.cooldown_seconds
+            self._persist_failure(model_ref, health, category)
             return
 
     def snapshot(self) -> dict[str, dict[str, object]]:
@@ -247,6 +285,28 @@ class ProviderRotationEngine:
             }
             for model_ref, record in sorted(self._health.items())
         }
+
+    def _persist_success(self, model_ref: str, health: HealthRecord) -> None:
+        if self.health_store is None:
+            return
+        self.health_store.save(self._health)
+        self.health_store.record_success_event(model_ref, health)
+
+    def _persist_failure(
+        self,
+        model_ref: str,
+        health: HealthRecord,
+        category: FailureCategory,
+    ) -> None:
+        if self.health_store is None:
+            return
+        self.health_store.save(self._health)
+        self.health_store.record_failure_event(
+            model_ref,
+            health,
+            failure_category=category,
+            error_type=health.last_error,
+        )
 
     def _score(self, candidate: ModelCandidate, health: HealthRecord) -> float:
         score = float(candidate.priority) * float(candidate.weight)

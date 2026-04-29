@@ -112,7 +112,9 @@ class TestSessionStoreAtomicWrites:
         ):
             store.flush_pending_save()
 
-        mock_log_error.assert_called_once()
+        assert mock_log_error.call_count >= 1
+        for call in mock_log_error.call_args_list:
+            assert call.args == ("Failed to save sessions: replace failed",)
 
         with open(path, encoding="utf-8") as f:
             disk_after_failed = f.read()

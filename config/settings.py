@@ -166,6 +166,10 @@ class Settings(BaseSettings):
     provider_rotation_config: str = Field(
         default="config/model_rings.yaml", validation_alias="PROVIDER_ROTATION_CONFIG"
     )
+    provider_rotation_health_db: str = Field(
+        default="memory_store/provider_health.db",
+        validation_alias="PROVIDER_ROTATION_HEALTH_DB",
+    )
 
     # ==================== Per-Provider Proxy ====================
     nvidia_nim_proxy: str = Field(default="", validation_alias="NVIDIA_NIM_PROXY")

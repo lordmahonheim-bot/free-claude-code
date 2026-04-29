@@ -20,6 +20,7 @@ from providers.exceptions import InvalidRequestError, ProviderError
 from .model_router import ModelRouter
 from .model_rings import ModelRingsConfig, load_model_rings
 from .rotation_engine import ProviderRotationEngine, failure_category_from_exception
+from .rotation_health_store import RotationHealthStore
 from .rotation_router import RotationRouter
 from .models.anthropic import MessagesRequest, TokenCountRequest
 from .models.responses import TokenCountResponse
@@ -102,7 +103,14 @@ class ClaudeProxyService:
         self._provider_getter = provider_getter
         self._model_router = model_router or ModelRouter(settings)
         self._token_counter = token_counter
-        self._rotation_engine = rotation_engine or ProviderRotationEngine()
+        if rotation_engine is not None:
+            self._rotation_engine = rotation_engine
+        else:
+            self._rotation_engine = ProviderRotationEngine(
+                health_store=RotationHealthStore(
+                    self._settings.provider_rotation_health_db
+                )
+            )
         self._model_rings_config = model_rings_config
         if self._settings.enable_provider_rotation and self._model_rings_config is None:
             self._model_rings_config = load_model_rings(

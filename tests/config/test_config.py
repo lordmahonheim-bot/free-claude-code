@@ -667,6 +667,7 @@ def test_provider_rotation_defaults():
     assert settings.enable_provider_rotation is False
     assert settings.provider_rotation_profile == "stable-agentic"
     assert settings.provider_rotation_config == "config/model_rings.yaml"
+    assert settings.provider_rotation_health_db == "memory_store/provider_health.db"
 
 
 def test_provider_rotation_env_overrides(monkeypatch):
@@ -675,9 +676,11 @@ def test_provider_rotation_env_overrides(monkeypatch):
     monkeypatch.setenv("ENABLE_PROVIDER_ROTATION", "true")
     monkeypatch.setenv("PROVIDER_ROTATION_PROFILE", "code-max")
     monkeypatch.setenv("PROVIDER_ROTATION_CONFIG", "config/custom_model_rings.yaml")
+    monkeypatch.setenv("PROVIDER_ROTATION_HEALTH_DB", "memory_store/custom_provider_health.db")
 
     settings = Settings()
 
     assert settings.enable_provider_rotation is True
     assert settings.provider_rotation_profile == "code-max"
     assert settings.provider_rotation_config == "config/custom_model_rings.yaml"
+    assert settings.provider_rotation_health_db == "memory_store/custom_provider_health.db"

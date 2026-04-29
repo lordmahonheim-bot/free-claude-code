@@ -12,6 +12,7 @@ from providers.exceptions import (
 from api.rotation_engine import (
     FailureCategory,
     failure_category_from_exception,
+    HealthRecord,
     ModelCandidate,
     ModelRing,
     ProviderRotationEngine,
@@ -176,3 +177,83 @@ def test_failure_category_uses_message_fallbacks_for_provider_errors():
 
 def test_failure_category_unknown_for_generic_exception():
     assert failure_category_from_exception(RuntimeError("boom")) == FailureCategory.UNKNOWN
+
+
+class InMemoryHealthStore:
+    def __init__(self, initial=None):
+        self.saved_snapshots = []
+        self.success_events = []
+        self.failure_events = []
+        self.initial = initial or {}
+
+    def load(self, *, now=None):
+        return dict(self.initial)
+
+    def save(self, health, *, now=None):
+        self.saved_snapshots.append(dict(health))
+
+    def record_success_event(self, model_ref, record):
+        self.success_events.append((model_ref, record.state))
+
+    def record_failure_event(
+        self,
+        model_ref,
+        record,
+        *,
+        failure_category,
+        error_type,
+    ):
+        self.failure_events.append(
+            (model_ref, record.state, failure_category, error_type)
+        )
+
+
+def test_engine_loads_persisted_health_on_startup():
+    store = InMemoryHealthStore(
+        {
+            "nvidia_nim/model": HealthRecord(
+                state=RotationState.DISABLED,
+                failure_count=1,
+                last_failure=FailureCategory.AUTHENTICATION,
+            )
+        }
+    )
+
+    engine = ProviderRotationEngine(health_store=store)
+
+    health = engine.health_for("nvidia_nim/model")
+    assert health.state == RotationState.DISABLED
+    assert health.failure_count == 1
+    assert health.last_failure == FailureCategory.AUTHENTICATION
+
+
+def test_engine_persists_success_and_records_event():
+    store = InMemoryHealthStore()
+    engine = ProviderRotationEngine(health_store=store)
+
+    engine.mark_success("google/gemini")
+
+    assert len(store.saved_snapshots) == 1
+    assert store.success_events == [("google/gemini", RotationState.ACTIVE)]
+
+
+def test_engine_persists_failure_and_records_event():
+    store = InMemoryHealthStore()
+    engine = ProviderRotationEngine(health_store=store)
+
+    engine.mark_failure(
+        "groq/fast",
+        FailureCategory.RATE_LIMIT,
+        message="RateLimitError",
+        now=100.0,
+    )
+
+    assert len(store.saved_snapshots) == 1
+    assert store.failure_events == [
+        (
+            "groq/fast",
+            RotationState.COOLDOWN,
+            FailureCategory.RATE_LIMIT,
+            "RateLimitError",
+        )
+    ]

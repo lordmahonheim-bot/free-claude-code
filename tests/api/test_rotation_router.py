@@ -1,5 +1,10 @@
 import pytest
 
+
+def _isolate_rotation_health_db(settings, tmp_path):
+    settings.provider_rotation_health_db = str(tmp_path / "provider_health.db")
+
+
 from api.model_router import ModelRouter, ResolvedModel
 from api.models.anthropic import Message, MessagesRequest, TokenCountRequest
 from api.rotation_router import RotationRouter, resolved_from_candidate
@@ -184,13 +189,14 @@ def test_claude_proxy_service_keeps_existing_route_when_rotation_disabled(settin
     assert seen_provider_ids == ["nvidia_nim"]
 
 
-def test_claude_proxy_service_uses_model_ring_when_rotation_enabled(settings):
+def test_claude_proxy_service_uses_model_ring_when_rotation_enabled(settings, tmp_path):
     from unittest.mock import MagicMock
 
     from api.model_rings import load_model_rings
     from api.services import ClaudeProxyService
 
     settings.enable_provider_rotation = True
+    _isolate_rotation_health_db(settings, tmp_path)
     settings.provider_rotation_profile = "fast-resilient"
     mock_provider = MagicMock()
 
@@ -219,7 +225,7 @@ def test_claude_proxy_service_uses_model_ring_when_rotation_enabled(settings):
     assert routed_request.model == "llama-3.3-70b-versatile"
 
 
-def test_claude_proxy_service_rotation_falls_back_after_preflight_provider_error(settings):
+def test_claude_proxy_service_rotation_falls_back_after_preflight_provider_error(settings, tmp_path):
     from unittest.mock import MagicMock
 
     from api.model_rings import load_model_rings
@@ -228,6 +234,7 @@ def test_claude_proxy_service_rotation_falls_back_after_preflight_provider_error
     from providers.exceptions import RateLimitError
 
     settings.enable_provider_rotation = True
+    _isolate_rotation_health_db(settings, tmp_path)
     settings.provider_rotation_profile = "fast-resilient"
     rings = load_model_rings("config/model_rings.yaml")
 
@@ -274,7 +281,7 @@ def test_claude_proxy_service_rotation_falls_back_after_preflight_provider_error
     assert routed_request.model == "gemini-2.5-flash"
 
 
-def test_claude_proxy_service_rotation_preserves_provider_error_when_all_candidates_fail(settings):
+def test_claude_proxy_service_rotation_preserves_provider_error_when_all_candidates_fail(settings, tmp_path):
     from unittest.mock import MagicMock
 
     import pytest
@@ -284,6 +291,7 @@ def test_claude_proxy_service_rotation_preserves_provider_error_when_all_candida
     from providers.exceptions import RateLimitError
 
     settings.enable_provider_rotation = True
+    _isolate_rotation_health_db(settings, tmp_path)
     settings.provider_rotation_profile = "fast-resilient"
     rings = load_model_rings("config/model_rings.yaml")
 
