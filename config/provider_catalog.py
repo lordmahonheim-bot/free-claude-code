@@ -18,6 +18,7 @@ DEEPSEEK_ANTHROPIC_DEFAULT_BASE = "https://api.deepseek.com/anthropic"
 # Historical export name: DeepSeek upstream is the native Anthropic path above.
 DEEPSEEK_DEFAULT_BASE = DEEPSEEK_ANTHROPIC_DEFAULT_BASE
 OPENROUTER_DEFAULT_BASE = "https://openrouter.ai/api/v1"
+GROQ_DEFAULT_BASE = "https://api.groq.com/openai/v1"
 LMSTUDIO_DEFAULT_BASE = "http://localhost:1234/v1"
 LLAMACPP_DEFAULT_BASE = "http://localhost:8080/v1"
 OLLAMA_DEFAULT_BASE = "http://localhost:11434"
@@ -59,6 +60,16 @@ PROVIDER_CATALOG: dict[str, ProviderDescriptor] = {
         default_base_url=OPENROUTER_DEFAULT_BASE,
         proxy_attr="open_router_proxy",
         capabilities=("chat", "streaming", "tools", "thinking", "native_anthropic"),
+    ),
+    "groq": ProviderDescriptor(
+        provider_id="groq",
+        transport_type="openai_chat",
+        credential_env="GROQ_API_KEY",
+        credential_url="https://console.groq.com/keys",
+        credential_attr="groq_api_key",
+        default_base_url=GROQ_DEFAULT_BASE,
+        proxy_attr="groq_proxy",
+        capabilities=("chat", "streaming", "tools", "rate_limit"),
     ),
     "deepseek": ProviderDescriptor(
         provider_id="deepseek",
