@@ -298,6 +298,25 @@ You can also create fixed aliases:
 alias claude-kimi='ANTHROPIC_BASE_URL="http://localhost:8082" ANTHROPIC_AUTH_TOKEN="freecc:moonshotai/kimi-k2.5" claude'
 ```
 
+## Local Document Workbench
+
+C-f-C includes a local-first document workbench exposed through `cfc-doc`.
+
+It reads files from `workbench/inbox`, extracts text and metadata locally, then writes extracted text into `workbench/processing` and Markdown reports into `workbench/reports`.
+
+Basic usage:
+
+    uv run cfc-doc list
+    uv run cfc-doc process
+    uv run cfc-doc process --max-chars 20000
+
+Supported V1.1 inputs include text-like files, PDF, DOCX, XLSX, PPTX, and image metadata. Audio/video files are detected but not transcribed yet.
+
+See:
+
+- `docs/document-workbench.md`
+- `examples/document-workbench.md`
+
 ## Optional Integrations
 
 ### Discord And Telegram Bots

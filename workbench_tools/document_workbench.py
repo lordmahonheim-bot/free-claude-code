@@ -424,9 +424,35 @@ def process_files(max_chars: int) -> int:
 
 
 def main() -> int:
-    parser = argparse.ArgumentParser(description="C-f-C local document workbench")
-    parser.add_argument("command", choices=["list", "process"], help="Action à exécuter")
-    parser.add_argument("--max-chars", type=int, default=80000, help="Nombre maximal de caractères extraits par fichier")
+    parser = argparse.ArgumentParser(
+        description=(
+            "C-f-C local document workbench. "
+            "Place files in workbench/inbox, then extract text and Markdown reports locally."
+        )
+    )
+    subparsers = parser.add_subparsers(dest="command", required=True)
+
+    subparsers.add_parser(
+        "list",
+        help="List files waiting in workbench/inbox.",
+        description="List files waiting in the local document workbench inbox.",
+    )
+
+    process_parser = subparsers.add_parser(
+        "process",
+        help="Extract text and reports from files in workbench/inbox.",
+        description=(
+            "Process every file in workbench/inbox and write extracted text to "
+            "workbench/processing plus Markdown reports to workbench/reports."
+        ),
+    )
+    process_parser.add_argument(
+        "--max-chars",
+        type=int,
+        default=80000,
+        help="Maximum number of extracted characters per file. Default: 80000.",
+    )
+
     args = parser.parse_args()
 
     ensure_dirs()
