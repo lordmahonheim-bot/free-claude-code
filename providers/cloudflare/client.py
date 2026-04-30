@@ -44,11 +44,25 @@ class CloudflareProvider(OpenAIChatTransport):
     def _build_request_body(
         self, request: Any, thinking_enabled: bool | None = None
     ) -> dict:
-        """Build an OpenAI-compatible chat completion request body for Workers AI."""
+        """Build an OpenAI-compatible chat completion request body for Workers AI.
+
+        KIMI K2.6 on Cloudflare spends completion budget on reasoning unless thinking is
+        explicitly disabled. Workers AI also expects max_completion_tokens for this
+        OpenAI-compatible endpoint.
+        """
         try:
-            return build_base_request_body(
+            body = build_base_request_body(
                 request,
                 reasoning_replay=ReasoningReplayMode.DISABLED,
             )
         except OpenAIConversionError as exc:
             raise InvalidRequestError(str(exc)) from exc
+
+        if "max_tokens" in body and "max_completion_tokens" not in body:
+            body["max_completion_tokens"] = body.pop("max_tokens")
+
+        extra_body = body.setdefault("extra_body", {})
+        chat_template_kwargs = extra_body.setdefault("chat_template_kwargs", {})
+        chat_template_kwargs.setdefault("thinking", False)
+
+        return body

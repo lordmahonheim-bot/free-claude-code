@@ -80,7 +80,9 @@ def test_build_request_body(provider_config):
     assert body["model"] == "@cf/moonshotai/kimi-k2.6"
     assert body["temperature"] == 0.5
     assert body["top_p"] == 0.9
-    assert body["max_tokens"] == 100
+    assert body["max_completion_tokens"] == 100
+    assert "max_tokens" not in body
+    assert body["extra_body"]["chat_template_kwargs"]["thinking"] is False
     assert len(body["messages"]) == 2
     assert body["messages"][0]["role"] == "system"
     assert body["messages"][0]["content"] == "System prompt"
