@@ -43,12 +43,20 @@ _PROVIDER_STREAM_FAILURE_MARKERS = (
     "event: error",
     '"type": "error"',
     "Provider API request failed",
+    "Invalid request sent to provider.",
 )
 
 
 def _stream_chunk_contains_provider_failure(chunk: str) -> bool:
     """Return True when an SSE chunk carries a provider failure signal."""
     return any(marker in chunk for marker in _PROVIDER_STREAM_FAILURE_MARKERS)
+
+
+def _failure_category_from_stream_failure(chunk: str) -> FailureCategory:
+    """Classify provider failures that were converted into SSE text."""
+    if "Invalid request sent to provider." in chunk:
+        return FailureCategory.INVALID_REQUEST
+    return FailureCategory.PROVIDER_ERROR
 
 
 def anthropic_sse_streaming_response(
@@ -209,7 +217,13 @@ class ClaudeProxyService:
         input_tokens: int,
         request_id: str,
     ):
-        """Build a provider stream, falling back before SSE streaming starts."""
+        """Build a provider stream with preflight and stream-error fallback.
+
+        Preflight failures are handled before returning the StreamingResponse body,
+        preserving the existing service contract. Stream failures converted into
+        Anthropic SSE text are buffered, classified, and skipped when a healthy
+        fallback candidate is available.
+        """
         if not self._settings.enable_provider_rotation:
             return self._provider_stream_for_routed_request(
                 routed,
@@ -223,30 +237,104 @@ class ClaudeProxyService:
             self._settings.provider_rotation_profile
         )
         ring = self._model_rings_config.get_ring(profile.default_ring)
-        last_error: ProviderError | None = None
+        attempted_model_refs: set[str] = set()
 
-        for _ in range(len(ring.candidates)):
-            rotated = self._rotation_router.route_messages_request(routed, ring)
-            try:
-                stream = self._provider_stream_for_routed_request(
-                    rotated,
-                    input_tokens=input_tokens,
-                    request_id=request_id,
-                )
-                return self._classify_rotation_stream_completion(
-                    stream,
-                    provider_model_ref=rotated.resolved.provider_model_ref,
-                )
-            except ProviderError as exc:
-                last_error = exc
-                self._rotation_engine.mark_failure(
-                    rotated.resolved.provider_model_ref,
-                    failure_category_from_exception(exc),
-                    message=type(exc).__name__,
-                )
+        def build_next_stream():
+            last_error: ProviderError | None = None
 
-        assert last_error is not None
-        raise last_error
+            for _ in range(len(ring.candidates)):
+                try:
+                    rotated = self._rotation_router.route_messages_request(routed, ring)
+                except RuntimeError:
+                    if last_error is not None:
+                        raise last_error
+                    raise
+
+                provider_model_ref = rotated.resolved.provider_model_ref
+
+                if provider_model_ref in attempted_model_refs:
+                    self._rotation_engine.mark_failure(
+                        provider_model_ref,
+                        FailureCategory.PROVIDER_ERROR,
+                        message="rotation_candidate_reselected",
+                    )
+                    continue
+
+                attempted_model_refs.add(provider_model_ref)
+
+                try:
+                    stream = self._provider_stream_for_routed_request(
+                        rotated,
+                        input_tokens=input_tokens,
+                        request_id=request_id,
+                    )
+                    return provider_model_ref, stream
+                except ProviderError as exc:
+                    last_error = exc
+                    self._rotation_engine.mark_failure(
+                        provider_model_ref,
+                        failure_category_from_exception(exc),
+                        message=type(exc).__name__,
+                    )
+
+            if last_error is not None:
+                raise last_error
+            raise ProviderError("Provider rotation exhausted all candidates before stream start")
+
+        provider_model_ref, stream = build_next_stream()
+
+        async def stream_with_fallback() -> AsyncIterator[str]:
+            nonlocal provider_model_ref, stream
+
+            last_failed_chunks: list[str] = []
+
+            while True:
+                buffered_chunks: list[str] = []
+                stream_failed = False
+                failure_category = FailureCategory.PROVIDER_ERROR
+
+                try:
+                    async for chunk in stream:
+                        buffered_chunks.append(chunk)
+                        if _stream_chunk_contains_provider_failure(chunk):
+                            stream_failed = True
+                            failure_category = _failure_category_from_stream_failure(chunk)
+
+                    if stream_failed:
+                        last_failed_chunks = buffered_chunks
+                        self._rotation_engine.mark_failure(
+                            provider_model_ref,
+                            failure_category,
+                            message="stream_error_event",
+                        )
+
+                        try:
+                            provider_model_ref, stream = build_next_stream()
+                        except (ProviderError, RuntimeError):
+                            for chunk in last_failed_chunks:
+                                yield chunk
+                            return
+
+                        continue
+
+                    self._rotation_engine.mark_success(provider_model_ref)
+                    for chunk in buffered_chunks:
+                        yield chunk
+                    return
+
+                except ProviderError as exc:
+                    self._rotation_engine.mark_failure(
+                        provider_model_ref,
+                        failure_category_from_exception(exc),
+                        message=type(exc).__name__,
+                    )
+
+                    try:
+                        provider_model_ref, stream = build_next_stream()
+                    except ProviderError:
+                        raise exc from exc
+
+        return stream_with_fallback()
 
     def provider_rotation_status(self, *, events_limit: int = 50) -> dict[str, Any]:
         """Return provider-rotation monitoring information."""

@@ -407,3 +407,70 @@ async def test_claude_proxy_service_marks_failure_when_rotation_stream_emits_pro
     assert health.success_count == 0
     assert health.failure_count == 1
 
+
+
+@pytest.mark.asyncio
+async def test_claude_proxy_service_rotation_falls_back_after_sse_error_text(settings, tmp_path):
+    from unittest.mock import MagicMock
+
+    from api.model_rings import load_model_rings
+    from api.services import ClaudeProxyService
+
+    settings.enable_provider_rotation = True
+    _isolate_rotation_health_db(settings, tmp_path)
+    settings.provider_rotation_profile = "fast-resilient"
+    rings = load_model_rings("config/model_rings.yaml")
+    engine = ProviderRotationEngine()
+
+    bad_provider = MagicMock()
+    good_provider = MagicMock()
+
+    async def error_stream(*_args, **_kwargs):
+        yield 'event: message_start\ndata: {"type":"message_start"}\n\n'
+        yield 'event: content_block_delta\ndata: {"type":"content_block_delta","delta":{"type":"text_delta","text":"Invalid request sent to provider. (request_id=req_test)"}}\n\n'
+
+    async def good_stream(*_args, **_kwargs):
+        yield 'event: message_start\ndata: {"type":"message_start"}\n\n'
+        yield 'event: content_block_delta\ndata: {"type":"content_block_delta","delta":{"type":"text_delta","text":"OK_FALLBACK"}}\n\n'
+
+    bad_provider.stream_response = error_stream
+    good_provider.stream_response = good_stream
+
+    seen_provider_ids = []
+
+    def provider_getter(provider_id):
+        seen_provider_ids.append(provider_id)
+        if provider_id == "groq":
+            return bad_provider
+        if provider_id == "google":
+            return good_provider
+        raise AssertionError(f"unexpected provider: {provider_id}")
+
+    service = ClaudeProxyService(
+        settings,
+        provider_getter=provider_getter,
+        rotation_engine=engine,
+        model_rings_config=rings,
+    )
+    request = MessagesRequest(
+        model="claude-opus-4-20250514",
+        max_tokens=100,
+        messages=[Message(role="user", content="hello")],
+    )
+
+    response = service.create_message(request)
+    chunks = [chunk async for chunk in response.body_iterator]
+    body = "".join(chunks)
+
+    assert seen_provider_ids == ["groq", "google"]
+    assert "Invalid request sent to provider" not in body
+    assert "OK_FALLBACK" in body
+
+    bad_health = engine.health_for("groq/llama-3.3-70b-versatile")
+    good_health = engine.health_for("google/gemini-2.5-flash")
+
+    assert bad_health.failure_count == 1
+    assert bad_health.success_count == 0
+    assert bad_health.last_failure == FailureCategory.INVALID_REQUEST
+    assert good_health.success_count == 1
+    assert good_health.failure_count == 0
