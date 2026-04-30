@@ -63,19 +63,51 @@ rings:
       weight: 1.0
       capabilities: [chat, streaming, tools, rate_limit, multimodal, long_context]
     - model_ref: open_router/deepseek/deepseek-v4-pro
-      priority: 96
+      priority: 98
       weight: 1.0
       capabilities: [chat, streaming, tools, thinking, native_anthropic]
-    - model_ref: nvidia_nim/z-ai/glm4.7
+    - model_ref: open_router/google/gemini-2.5-pro
+      priority: 96
+      weight: 1.0
+      capabilities: [chat, streaming, tools, thinking, multimodal, long_context]
+    - model_ref: open_router/moonshotai/kimi-k2.6
+      priority: 94
+      weight: 1.0
+      capabilities: [chat, streaming, tools, long_context]
+    - model_ref: nvidia_nim/deepseek-ai/deepseek-v4-pro
+      priority: 92
+      weight: 1.0
+      capabilities: [chat, streaming, tools, rate_limit]
+    - model_ref: open_router/mistralai/devstral-2512
+      priority: 90
+      weight: 1.0
+      capabilities: [chat, streaming, tools, code]
+    - model_ref: nvidia_nim/z-ai/glm-5.1
       priority: 88
       weight: 1.0
       capabilities: [chat, streaming, tools, rate_limit]
+    - model_ref: nvidia_nim/z-ai/glm4.7
+      priority: 86
+      weight: 1.0
+      capabilities: [chat, streaming, tools, rate_limit]
+    - model_ref: open_router/minimax/minimax-m2.7
+      priority: 84
+      weight: 1.0
+      capabilities: [chat, streaming, tools]
     - model_ref: google/gemini-2.5-flash
       priority: 82
       weight: 1.0
       capabilities: [chat, streaming, tools, rate_limit]
     - model_ref: groq/llama-3.3-70b-versatile
-      priority: 70
+      priority: 76
+      weight: 1.0
+      capabilities: [chat, streaming, tools, rate_limit]
+    - model_ref: groq/qwen/qwen3-32b
+      priority: 74
+      weight: 1.0
+      capabilities: [chat, streaming, tools, rate_limit]
+    - model_ref: cerebras/qwen-3-235b-a22b-instruct-2507
+      priority: 72
       weight: 1.0
       capabilities: [chat, streaming, tools, rate_limit]
 
@@ -84,12 +116,32 @@ rings:
       priority: 100
       weight: 1.0
       capabilities: [chat, streaming, tools, thinking, native_anthropic]
+    - model_ref: open_router/google/gemini-2.5-pro
+      priority: 96
+      weight: 1.0
+      capabilities: [chat, streaming, tools, thinking, multimodal, long_context]
     - model_ref: cloudflare/@cf/moonshotai/kimi-k2.6
       priority: 94
       weight: 1.0
       capabilities: [chat, streaming, tools, rate_limit, multimodal, long_context]
-    - model_ref: google/gemini-2.5-flash
+    - model_ref: nvidia_nim/deepseek-ai/deepseek-v4-pro
+      priority: 90
+      weight: 1.0
+      capabilities: [chat, streaming, tools, rate_limit]
+    - model_ref: nvidia_nim/z-ai/glm-5.1
+      priority: 86
+      weight: 1.0
+      capabilities: [chat, streaming, tools, rate_limit]
+    - model_ref: groq/openai/gpt-oss-120b
       priority: 82
+      weight: 1.0
+      capabilities: [chat, streaming, tools, rate_limit]
+    - model_ref: cerebras/qwen-3-235b-a22b-instruct-2507
+      priority: 80
+      weight: 1.0
+      capabilities: [chat, streaming, tools, rate_limit]
+    - model_ref: google/gemini-2.5-flash
+      priority: 76
       weight: 1.0
       capabilities: [chat, streaming, tools, rate_limit]
 
@@ -102,8 +154,24 @@ rings:
       priority: 90
       weight: 1.0
       capabilities: [chat, streaming, tools, rate_limit]
-    - model_ref: cerebras/llama3.1-8b
-      priority: 80
+    - model_ref: groq/qwen/qwen3-32b
+      priority: 86
+      weight: 1.0
+      capabilities: [chat, streaming, tools, rate_limit]
+    - model_ref: groq/openai/gpt-oss-120b
+      priority: 84
+      weight: 1.0
+      capabilities: [chat, streaming, tools, rate_limit]
+    - model_ref: open_router/mistralai/devstral-2512
+      priority: 78
+      weight: 1.0
+      capabilities: [chat, streaming, tools, code]
+    - model_ref: open_router/minimax/minimax-m2.7
+      priority: 76
+      weight: 1.0
+      capabilities: [chat, streaming, tools]
+    - model_ref: cerebras/qwen-3-235b-a22b-instruct-2507
+      priority: 72
       weight: 1.0
       capabilities: [chat, streaming, tools, rate_limit]
 
@@ -112,14 +180,26 @@ rings:
       priority: 100
       weight: 1.0
       capabilities: [chat, streaming, tools, rate_limit, multimodal, long_context]
+    - model_ref: open_router/google/gemini-2.5-pro
+      priority: 96
+      weight: 1.0
+      capabilities: [chat, streaming, tools, thinking, multimodal, long_context]
+    - model_ref: open_router/moonshotai/kimi-k2.6
+      priority: 94
+      weight: 1.0
+      capabilities: [chat, streaming, tools, long_context]
     - model_ref: google/gemini-2.5-flash
-      priority: 92
+      priority: 90
       weight: 1.0
       capabilities: [chat, streaming, tools, rate_limit, multimodal]
     - model_ref: open_router/deepseek/deepseek-v4-pro
       priority: 88
       weight: 1.0
       capabilities: [chat, streaming, tools, thinking, native_anthropic]
+    - model_ref: nvidia_nim/deepseek-ai/deepseek-v4-pro
+      priority: 84
+      weight: 1.0
+      capabilities: [chat, streaming, tools, rate_limit]
 
   private_local:
     - model_ref: ollama/qwen-coder-local
