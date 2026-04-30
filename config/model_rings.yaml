@@ -63,11 +63,19 @@ rings:
       weight: 1.0
       capabilities: [chat, streaming, tools, rate_limit, multimodal, long_context]
     - model_ref: open_router/deepseek/deepseek-v4-pro
-      priority: 95
+      priority: 96
       weight: 1.0
       capabilities: [chat, streaming, tools, thinking, native_anthropic]
+    - model_ref: nvidia_nim/z-ai/glm4.7
+      priority: 88
+      weight: 1.0
+      capabilities: [chat, streaming, tools, rate_limit]
     - model_ref: google/gemini-2.5-flash
-      priority: 80
+      priority: 82
+      weight: 1.0
+      capabilities: [chat, streaming, tools, rate_limit]
+    - model_ref: groq/llama-3.3-70b-versatile
+      priority: 70
       weight: 1.0
       capabilities: [chat, streaming, tools, rate_limit]
 
@@ -75,13 +83,13 @@ rings:
     - model_ref: open_router/deepseek/deepseek-v4-pro
       priority: 100
       weight: 1.0
-      capabilities: [chat, streaming, thinking, native_anthropic]
-    - model_ref: cerebras/gpt-oss-120b
-      priority: 90
+      capabilities: [chat, streaming, tools, thinking, native_anthropic]
+    - model_ref: cloudflare/@cf/moonshotai/kimi-k2.6
+      priority: 94
       weight: 1.0
-      capabilities: [chat, streaming, tools, rate_limit]
+      capabilities: [chat, streaming, tools, rate_limit, multimodal, long_context]
     - model_ref: google/gemini-2.5-flash
-      priority: 80
+      priority: 82
       weight: 1.0
       capabilities: [chat, streaming, tools, rate_limit]
 
@@ -100,18 +108,18 @@ rings:
       capabilities: [chat, streaming, tools, rate_limit]
 
   long_context:
-    - model_ref: google/gemini-2.5-flash
+    - model_ref: cloudflare/@cf/moonshotai/kimi-k2.6
       priority: 100
+      weight: 1.0
+      capabilities: [chat, streaming, tools, rate_limit, multimodal, long_context]
+    - model_ref: google/gemini-2.5-flash
+      priority: 92
       weight: 1.0
       capabilities: [chat, streaming, tools, rate_limit, multimodal]
     - model_ref: open_router/deepseek/deepseek-v4-pro
-      priority: 90
+      priority: 88
       weight: 1.0
       capabilities: [chat, streaming, tools, thinking, native_anthropic]
-    - model_ref: cloudflare/@cf/moonshotai/kimi-k2.6
-      priority: 80
-      weight: 1.0
-      capabilities: [chat, streaming, tools, rate_limit, multimodal, long_context]
 
   private_local:
     - model_ref: ollama/qwen-coder-local
