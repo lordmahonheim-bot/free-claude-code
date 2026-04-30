@@ -313,3 +313,97 @@ def test_claude_proxy_service_rotation_preserves_provider_error_when_all_candida
 
     with pytest.raises(RateLimitError):
         service.create_message(request)
+
+async def _collect_streaming_response(response):
+    chunks = []
+    async for chunk in response.body_iterator:
+        chunks.append(chunk)
+    return chunks
+
+
+@pytest.mark.asyncio
+async def test_claude_proxy_service_marks_success_after_rotation_stream_completion(settings, tmp_path):
+    from unittest.mock import MagicMock
+
+    from api.model_rings import load_model_rings
+    from api.rotation_engine import RotationState
+    from api.services import ClaudeProxyService
+
+    settings.enable_provider_rotation = True
+    _isolate_rotation_health_db(settings, tmp_path)
+    settings.provider_rotation_profile = "fast-resilient"
+
+    provider = MagicMock()
+
+    async def fake_stream(*_args, **_kwargs):
+        yield "event: message_start\\ndata: {}\\n\\n"
+        yield "event: message_stop\\ndata: {}\\n\\n"
+
+    provider.stream_response = fake_stream
+
+    service = ClaudeProxyService(
+        settings,
+        provider_getter=lambda _provider_id: provider,
+        model_rings_config=load_model_rings("config/model_rings.yaml"),
+    )
+    request = MessagesRequest(
+        model="claude-opus-4-20250514",
+        max_tokens=100,
+        messages=[Message(role="user", content="hello")],
+    )
+
+    response = service.create_message(request)
+    health_before = service._rotation_engine.health_for("groq/llama-3.3-70b-versatile")
+    assert health_before.success_count == 0
+
+    chunks = await _collect_streaming_response(response)
+
+    assert chunks
+    health_after = service._rotation_engine.health_for("groq/llama-3.3-70b-versatile")
+    assert health_after.state == RotationState.ACTIVE
+    assert health_after.success_count == 1
+    assert health_after.last_failure is None
+
+
+@pytest.mark.asyncio
+async def test_claude_proxy_service_marks_failure_when_rotation_stream_emits_provider_error(settings, tmp_path):
+    from unittest.mock import MagicMock
+
+    from api.model_rings import load_model_rings
+    from api.rotation_engine import FailureCategory, RotationState
+    from api.services import ClaudeProxyService
+
+    settings.enable_provider_rotation = True
+    _isolate_rotation_health_db(settings, tmp_path)
+    settings.provider_rotation_profile = "fast-resilient"
+
+    provider = MagicMock()
+
+    async def fake_stream(*_args, **_kwargs):
+        yield "event: message_start\\ndata: {}\\n\\n"
+        yield 'event: content_block_delta\\ndata: {"delta": {"text": "Provider API request failed"}}\\n\\n'
+        yield "event: message_stop\\ndata: {}\\n\\n"
+
+    provider.stream_response = fake_stream
+
+    service = ClaudeProxyService(
+        settings,
+        provider_getter=lambda _provider_id: provider,
+        model_rings_config=load_model_rings("config/model_rings.yaml"),
+    )
+    request = MessagesRequest(
+        model="claude-opus-4-20250514",
+        max_tokens=100,
+        messages=[Message(role="user", content="hello")],
+    )
+
+    response = service.create_message(request)
+    chunks = await _collect_streaming_response(response)
+
+    assert chunks
+    health = service._rotation_engine.health_for("groq/llama-3.3-70b-versatile")
+    assert health.state == RotationState.COOLDOWN
+    assert health.last_failure == FailureCategory.PROVIDER_ERROR
+    assert health.success_count == 0
+    assert health.failure_count == 1
+

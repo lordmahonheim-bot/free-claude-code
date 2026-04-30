@@ -19,7 +19,7 @@ from providers.exceptions import InvalidRequestError, ProviderError
 
 from .model_router import ModelRouter
 from .model_rings import ModelRingsConfig, load_model_rings
-from .rotation_engine import ProviderRotationEngine, failure_category_from_exception
+from .rotation_engine import FailureCategory, ProviderRotationEngine, failure_category_from_exception
 from .rotation_health_store import RotationHealthStore
 from .rotation_router import RotationRouter
 from .models.anthropic import MessagesRequest, TokenCountRequest
@@ -38,6 +38,17 @@ ProviderGetter = Callable[[str], BaseProvider]
 
 # Providers that use ``/chat/completions`` + Anthropic-to-OpenAI conversion (not native Messages).
 _OPENAI_CHAT_UPSTREAM_IDS = frozenset({"nvidia_nim"})
+
+_PROVIDER_STREAM_FAILURE_MARKERS = (
+    "event: error",
+    '"type": "error"',
+    "Provider API request failed",
+)
+
+
+def _stream_chunk_contains_provider_failure(chunk: str) -> bool:
+    """Return True when an SSE chunk carries a provider failure signal."""
+    return any(marker in chunk for marker in _PROVIDER_STREAM_FAILURE_MARKERS)
 
 
 def anthropic_sse_streaming_response(
@@ -162,6 +173,35 @@ class ClaudeProxyService:
             thinking_enabled=routed.resolved.thinking_enabled,
         )
 
+    async def _classify_rotation_stream_completion(
+        self,
+        stream: AsyncIterator[str],
+        *,
+        provider_model_ref: str,
+    ) -> AsyncIterator[str]:
+        """Relay a provider stream and classify health after real stream completion."""
+        stream_failed = False
+        try:
+            async for chunk in stream:
+                if _stream_chunk_contains_provider_failure(chunk):
+                    stream_failed = True
+                yield chunk
+        except Exception as exc:
+            self._rotation_engine.mark_failure(
+                provider_model_ref,
+                failure_category_from_exception(exc),
+                message=type(exc).__name__,
+            )
+            raise
+        if stream_failed:
+            self._rotation_engine.mark_failure(
+                provider_model_ref,
+                FailureCategory.PROVIDER_ERROR,
+                message="stream_error_event",
+            )
+            return
+        self._rotation_engine.mark_success(provider_model_ref)
+
     def _provider_stream_with_rotation_fallback(
         self,
         routed,
@@ -193,8 +233,10 @@ class ClaudeProxyService:
                     input_tokens=input_tokens,
                     request_id=request_id,
                 )
-                self._rotation_engine.mark_success(rotated.resolved.provider_model_ref)
-                return stream
+                return self._classify_rotation_stream_completion(
+                    stream,
+                    provider_model_ref=rotated.resolved.provider_model_ref,
+                )
             except ProviderError as exc:
                 last_error = exc
                 self._rotation_engine.mark_failure(
