@@ -192,3 +192,37 @@ def test_unknown_failure_category_loads_as_unknown(tmp_path):
     loaded = store.load(now=100.0)
 
     assert loaded["provider/model"].last_failure == FailureCategory.UNKNOWN
+
+
+def test_list_events_returns_recent_events_newest_first(tmp_path):
+    path = tmp_path / "provider_health.db"
+    store = RotationHealthStore(path)
+
+    store.record_success_event(
+        "google/gemini",
+        HealthRecord(state=RotationState.ACTIVE, success_count=1),
+    )
+    store.record_failure_event(
+        "groq/fast",
+        HealthRecord(
+            state=RotationState.COOLDOWN,
+            failure_count=1,
+            last_failure=FailureCategory.RATE_LIMIT,
+            last_error="RateLimitError",
+        ),
+        failure_category=FailureCategory.RATE_LIMIT,
+        error_type="RateLimitError",
+    )
+
+    events = store.list_events(limit=1)
+
+    assert len(events) == 1
+    assert events[0]["model_ref"] == "groq/fast"
+    assert events[0]["event_type"] == "failure"
+    assert events[0]["failure_category"] == "rate_limit"
+
+
+def test_list_events_missing_database_returns_empty_list(tmp_path):
+    store = RotationHealthStore(tmp_path / "missing.db")
+
+    assert store.list_events(limit=10) == []

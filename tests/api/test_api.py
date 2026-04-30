@@ -58,6 +58,27 @@ def test_models_list(client: TestClient):
     assert data["last_id"] == ids[-1]
 
 
+def test_provider_rotation_status_endpoint_shape(client: TestClient):
+    response = client.get("/v1/provider-rotation/status?events_limit=0")
+
+    assert response.status_code == 200
+    data = response.json()
+    assert data["enabled"] is False
+    assert data["profile"] == "stable-agentic"
+    assert data["config_path"] == "config/model_rings.yaml"
+    assert "health_db" in data
+    assert data["rings_loaded"] is False
+    assert data["ring"] is None
+    assert "summary" in data
+    assert "health" in data
+    assert data["events"] == []
+    assert "total_models" in data["summary"]
+    assert "states" in data["summary"]
+    assert "total_success_count" in data["summary"]
+    assert "total_failure_count" in data["summary"]
+    assert data["summary"]["events_returned"] == 0
+
+
 def test_probe_endpoints_return_204_with_allow_headers(client: TestClient):
     responses = [
         client.head("/"),
@@ -68,6 +89,8 @@ def test_probe_endpoints_return_204_with_allow_headers(client: TestClient):
         client.options("/v1/messages"),
         client.head("/v1/messages/count_tokens"),
         client.options("/v1/messages/count_tokens"),
+        client.head("/v1/provider-rotation/status"),
+        client.options("/v1/provider-rotation/status"),
     ]
 
     for response in responses:

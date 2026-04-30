@@ -164,6 +164,22 @@ async def probe_health():
     return _probe_response("GET, HEAD, OPTIONS")
 
 
+@router.get("/v1/provider-rotation/status")
+async def provider_rotation_status(
+    events_limit: int = 50,
+    service: ClaudeProxyService = Depends(get_proxy_service),
+    _auth=Depends(require_api_key),
+):
+    """Return provider-rotation health and event monitoring data."""
+    return service.provider_rotation_status(events_limit=events_limit)
+
+
+@router.api_route("/v1/provider-rotation/status", methods=["HEAD", "OPTIONS"])
+async def probe_provider_rotation_status(_auth=Depends(require_api_key)):
+    """Respond to compatibility probes for provider-rotation monitoring."""
+    return _probe_response("GET, HEAD, OPTIONS")
+
+
 @router.get("/v1/models", response_model=ModelsListResponse)
 async def list_models(_auth=Depends(require_api_key)):
     """List the Claude model ids this proxy advertises for compatibility."""

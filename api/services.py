@@ -206,6 +206,18 @@ class ClaudeProxyService:
         assert last_error is not None
         raise last_error
 
+    def provider_rotation_status(self, *, events_limit: int = 50) -> dict[str, Any]:
+        """Return provider-rotation monitoring information."""
+        from .rotation_monitoring import build_provider_rotation_status
+
+        return build_provider_rotation_status(
+            settings=self._settings,
+            rotation_engine=self._rotation_engine,
+            health_store=getattr(self._rotation_engine, "health_store", None),
+            model_rings_config=self._model_rings_config,
+            events_limit=events_limit,
+        )
+
     def create_message(self, request_data: MessagesRequest) -> object:
         """Create a message response or streaming response."""
         try:

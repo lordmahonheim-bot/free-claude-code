@@ -132,6 +132,52 @@ class RotationHealthStore:
             error_type=error_type,
         )
 
+    def list_events(
+        self,
+        *,
+        limit: int = 50,
+        model_ref: str | None = None,
+    ) -> list[dict[str, Any]]:
+        """Return recent provider-health events for monitoring."""
+        try:
+            safe_limit = max(0, min(int(limit), 500))
+        except (TypeError, ValueError):
+            safe_limit = 50
+
+        if safe_limit <= 0 or not self.path.exists():
+            return []
+
+        try:
+            with self._connect() as conn:
+                self._ensure_schema(conn)
+                params: list[Any] = []
+                where_clause = ""
+                if model_ref is not None:
+                    where_clause = "WHERE model_ref = ?"
+                    params.append(model_ref)
+                params.append(safe_limit)
+                rows = conn.execute(
+                    f"""
+                    SELECT
+                        id,
+                        model_ref,
+                        event_type,
+                        state,
+                        failure_category,
+                        error_type,
+                        created_at
+                    FROM provider_health_events
+                    {where_clause}
+                    ORDER BY id DESC
+                    LIMIT ?
+                    """,
+                    params,
+                ).fetchall()
+        except sqlite3.DatabaseError:
+            return []
+
+        return [dict(row) for row in rows]
+
     def _append_event(
         self,
         *,
