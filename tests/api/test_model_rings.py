@@ -11,7 +11,9 @@ def test_load_default_model_rings_config():
     assert "stable-agentic" in config.profiles
     assert "code_agentic" in config.rings
     assert config.get_profile("stable-agentic").default_ring == "code_agentic"
-    assert config.get_ring("code_agentic").candidates[0].provider_id == "nvidia_nim"
+    first_candidate = config.get_ring("code_agentic").candidates[0]
+    assert first_candidate.provider_id == "cloudflare"
+    assert first_candidate.model_ref == "cloudflare/@cf/moonshotai/kimi-k2.6"
 
 
 def test_load_model_rings_rejects_unknown_provider(tmp_path: Path):
