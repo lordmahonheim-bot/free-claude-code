@@ -676,11 +676,40 @@ def test_provider_rotation_env_overrides(monkeypatch):
     monkeypatch.setenv("ENABLE_PROVIDER_ROTATION", "true")
     monkeypatch.setenv("PROVIDER_ROTATION_PROFILE", "code-max")
     monkeypatch.setenv("PROVIDER_ROTATION_CONFIG", "config/custom_model_rings.yaml")
-    monkeypatch.setenv("PROVIDER_ROTATION_HEALTH_DB", "memory_store/custom_provider_health.db")
+    monkeypatch.setenv(
+        "PROVIDER_ROTATION_HEALTH_DB", "memory_store/custom_provider_health.db"
+    )
 
     settings = Settings()
 
     assert settings.enable_provider_rotation is True
     assert settings.provider_rotation_profile == "code-max"
     assert settings.provider_rotation_config == "config/custom_model_rings.yaml"
-    assert settings.provider_rotation_health_db == "memory_store/custom_provider_health.db"
+    assert (
+        settings.provider_rotation_health_db == "memory_store/custom_provider_health.db"
+    )
+
+
+def test_cloudflare_settings_from_env(monkeypatch):
+    """Cloudflare Workers AI env vars are loaded into settings."""
+    from config.settings import Settings
+
+    monkeypatch.setenv("CLOUDFLARE_API_KEY", "test-cloudflare-key")
+    monkeypatch.setenv("CLOUDFLARE_ACCOUNT_ID", "test-account")
+    monkeypatch.setenv("CLOUDFLARE_BASE_URL", "https://example.test/v1")
+    monkeypatch.setenv("CLOUDFLARE_PROXY", "http://proxy.example")
+    settings = Settings()
+    assert settings.cloudflare_api_key == "test-cloudflare-key"
+    assert settings.cloudflare_account_id == "test-account"
+    assert settings.cloudflare_base_url == "https://example.test/v1"
+    assert settings.cloudflare_proxy == "http://proxy.example"
+
+
+def test_cloudflare_model_prefix_is_valid(monkeypatch):
+    """Cloudflare provider id is accepted in MODEL."""
+    from config.settings import Settings
+
+    monkeypatch.setenv("MODEL", "cloudflare/@cf/moonshotai/kimi-k2.6")
+    settings = Settings()
+    assert settings.provider_type == "cloudflare"
+    assert settings.model_name == "@cf/moonshotai/kimi-k2.6"

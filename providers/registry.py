@@ -49,6 +49,12 @@ def _create_google(config: ProviderConfig, _settings: Settings) -> BaseProvider:
     return GoogleProvider(config)
 
 
+def _create_cloudflare(config: ProviderConfig, settings: Settings) -> BaseProvider:
+    from providers.cloudflare import CloudflareProvider
+
+    return CloudflareProvider(config, account_id=settings.cloudflare_account_id)
+
+
 def _create_deepseek(config: ProviderConfig, _settings: Settings) -> BaseProvider:
     from providers.deepseek import DeepSeekProvider
 
@@ -79,6 +85,7 @@ PROVIDER_FACTORIES: dict[str, ProviderFactory] = {
     "groq": _create_groq,
     "cerebras": _create_cerebras,
     "google": _create_google,
+    "cloudflare": _create_cloudflare,
     "deepseek": _create_deepseek,
     "lmstudio": _create_lmstudio,
     "llamacpp": _create_llamacpp,

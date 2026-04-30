@@ -107,6 +107,13 @@ class Settings(BaseSettings):
     # ==================== Google/Gemini Config ====================
     google_api_key: str = Field(default="", validation_alias="GOOGLE_API_KEY")
 
+    # ==================== Cloudflare Workers AI Config ====================
+    cloudflare_api_key: str = Field(default="", validation_alias="CLOUDFLARE_API_KEY")
+    cloudflare_account_id: str = Field(
+        default="", validation_alias="CLOUDFLARE_ACCOUNT_ID"
+    )
+    cloudflare_base_url: str = Field(default="", validation_alias="CLOUDFLARE_BASE_URL")
+
     # ==================== DeepSeek Config ====================
     deepseek_api_key: str = Field(default="", validation_alias="DEEPSEEK_API_KEY")
 
@@ -177,6 +184,7 @@ class Settings(BaseSettings):
     groq_proxy: str = Field(default="", validation_alias="GROQ_PROXY")
     cerebras_proxy: str = Field(default="", validation_alias="CEREBRAS_PROXY")
     google_proxy: str = Field(default="", validation_alias="GOOGLE_PROXY")
+    cloudflare_proxy: str = Field(default="", validation_alias="CLOUDFLARE_PROXY")
     lmstudio_proxy: str = Field(default="", validation_alias="LMSTUDIO_PROXY")
     llamacpp_proxy: str = Field(default="", validation_alias="LLAMACPP_PROXY")
 

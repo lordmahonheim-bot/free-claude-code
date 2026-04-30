@@ -21,6 +21,7 @@ OPENROUTER_DEFAULT_BASE = "https://openrouter.ai/api/v1"
 GROQ_DEFAULT_BASE = "https://api.groq.com/openai/v1"
 CEREBRAS_DEFAULT_BASE = "https://api.cerebras.ai/v1"
 GOOGLE_DEFAULT_BASE = "https://generativelanguage.googleapis.com/v1beta/openai"
+CLOUDFLARE_DEFAULT_BASE = "https://api.cloudflare.com/client/v4"
 LMSTUDIO_DEFAULT_BASE = "http://localhost:1234/v1"
 LLAMACPP_DEFAULT_BASE = "http://localhost:8080/v1"
 OLLAMA_DEFAULT_BASE = "http://localhost:11434"
@@ -92,6 +93,24 @@ PROVIDER_CATALOG: dict[str, ProviderDescriptor] = {
         default_base_url=GOOGLE_DEFAULT_BASE,
         proxy_attr="google_proxy",
         capabilities=("chat", "streaming", "tools", "rate_limit", "multimodal"),
+    ),
+    "cloudflare": ProviderDescriptor(
+        provider_id="cloudflare",
+        transport_type="openai_chat",
+        credential_env="CLOUDFLARE_API_KEY",
+        credential_url="https://dash.cloudflare.com/profile/api-tokens",
+        credential_attr="cloudflare_api_key",
+        default_base_url=CLOUDFLARE_DEFAULT_BASE,
+        base_url_attr="cloudflare_base_url",
+        proxy_attr="cloudflare_proxy",
+        capabilities=(
+            "chat",
+            "streaming",
+            "tools",
+            "rate_limit",
+            "multimodal",
+            "long_context",
+        ),
     ),
     "deepseek": ProviderDescriptor(
         provider_id="deepseek",
