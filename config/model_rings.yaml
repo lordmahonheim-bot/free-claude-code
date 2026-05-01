@@ -59,7 +59,7 @@ profiles:
 rings:
   code_agentic:
     - model_ref: cloudflare/@cf/moonshotai/kimi-k2.6
-      priority: 100
+      priority: 70
       weight: 1.0
       capabilities: [chat, streaming, tools, rate_limit, multimodal, long_context]
     - model_ref: open_router/deepseek/deepseek-v4-pro
