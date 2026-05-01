@@ -11,6 +11,10 @@ from fastapi import HTTPException
 from fastapi.responses import StreamingResponse
 from loguru import logger
 
+from memory_v2.config import MemoryV2Config
+from memory_v2.middleware import PersistentMemoryMiddleware
+from memory_v2.stream_capture import SSEStreamCapture
+
 from config.settings import Settings
 from core.anthropic import get_token_count, get_user_facing_error_message
 from core.anthropic.sse import ANTHROPIC_SSE_RESPONSE_HEADERS
@@ -136,6 +140,77 @@ class ClaudeProxyService:
                 self._settings.provider_rotation_config
             )
         self._rotation_router = RotationRouter(self._rotation_engine)
+        self._memory_v2_config = MemoryV2Config(
+            enabled=self._settings.enable_persistent_memory_v2,
+            db_path=self._settings.persistent_memory_v2_db,
+            injection_limit=self._settings.persistent_memory_v2_injection_limit,
+            max_context_chars=self._settings.persistent_memory_v2_max_context_chars,
+        )
+        self._memory_v2 = (
+            PersistentMemoryMiddleware(config=self._memory_v2_config)
+            if self._memory_v2_config.enabled
+            else None
+        )
+
+    def _memory_v2_prepare_request(
+        self,
+        request_data: MessagesRequest,
+    ) -> tuple[str | None, MessagesRequest]:
+        """Inject Persistent Memory V2 context before routing when enabled."""
+        if self._memory_v2 is None:
+            return None, request_data
+
+        payload = request_data.model_dump(exclude_none=True)
+        source_session_id = None
+        if isinstance(request_data.metadata, dict):
+            source_session_id = request_data.metadata.get("session_id") or request_data.metadata.get("conversation_id")
+
+        session_id, injected_payload = self._memory_v2.before_request(
+            payload,
+            source_session_id=source_session_id,
+        )
+        return session_id, MessagesRequest.model_validate(injected_payload)
+
+    async def _memory_v2_capture_stream(
+        self,
+        stream: AsyncIterator[str],
+        *,
+        session_id: str | None,
+        request_payload: MessagesRequest,
+        provider: str | None,
+        model: str | None,
+    ) -> AsyncIterator[str]:
+        """Pass through SSE chunks while persisting the reconstructed assistant turn."""
+        if self._memory_v2 is None or session_id is None:
+            async for chunk in stream:
+                yield chunk
+            return
+
+        capture = SSEStreamCapture()
+        try:
+            async for chunk in stream:
+                capture.feed_line(chunk)
+                yield chunk
+        except Exception as exc:
+            capture.result.errors.append(type(exc).__name__)
+            self._memory_v2.store_stream_result(
+                session_id=session_id,
+                request_payload=request_payload,
+                stream_result=capture.result,
+                provider=provider,
+                model=model,
+                metadata={"memory_v2_capture": "exception"},
+            )
+            raise
+
+        self._memory_v2.store_stream_result(
+            session_id=session_id,
+            request_payload=request_payload,
+            stream_result=capture.result,
+            provider=provider,
+            model=model,
+            metadata={"memory_v2_capture": "completed"},
+        )
 
     def _apply_provider_rotation_to_messages(self, routed):
         """Apply provider rotation to a routed messages request when enabled."""
@@ -352,6 +427,7 @@ class ClaudeProxyService:
         """Create a message response or streaming response."""
         try:
             _require_non_empty_messages(request_data.messages)
+            memory_v2_session_id, request_data = self._memory_v2_prepare_request(request_data)
 
             routed = self._model_router.resolve_messages_request(request_data)
             routed = self._apply_provider_rotation_to_messages(routed)
@@ -413,11 +489,23 @@ class ClaudeProxyService:
             input_tokens = self._token_counter(
                 routed.request.messages, routed.request.system, routed.request.tools
             )
+            memory_v2_provider = getattr(routed.resolved, "provider_id", None)
+            memory_v2_model = (
+                getattr(routed.resolved, "provider_model_ref", None)
+                or getattr(routed.request, "model", None)
+            )
+            provider_stream = self._provider_stream_with_rotation_fallback(
+                routed,
+                input_tokens=input_tokens,
+                request_id=request_id,
+            )
             return anthropic_sse_streaming_response(
-                self._provider_stream_with_rotation_fallback(
-                    routed,
-                    input_tokens=input_tokens,
-                    request_id=request_id,
+                self._memory_v2_capture_stream(
+                    provider_stream,
+                    session_id=memory_v2_session_id,
+                    request_payload=routed.request,
+                    provider=memory_v2_provider,
+                    model=memory_v2_model,
                 ),
             )
 

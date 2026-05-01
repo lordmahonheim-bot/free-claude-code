@@ -91,23 +91,27 @@ async def create_message(
     _auth=Depends(require_api_key),
 ):
     """Create a message (always streaming) with memory."""
-    # MEMORY: Bonjour short-circuit - local synthesis before any provider call
-    if MEMORY_HOOKS_AVAILABLE:
+    legacy_memory_enabled = (
+        MEMORY_HOOKS_AVAILABLE and not settings.enable_persistent_memory_v2
+    )
+
+    # MEMORY: Legacy Bonjour short-circuit. Disabled when Persistent Memory V2 is active.
+    if legacy_memory_enabled:
         from memory.hooks import _create_bonjour_response
 
         bonjour_response = _create_bonjour_response(request_data)
         if bonjour_response:
             return bonjour_response
 
-    # MEMORY: Hook before processing
-    session_id = before_request(request_data, n_context=4) if MEMORY_HOOKS_AVAILABLE else None
+    # MEMORY: Legacy hook before processing. Disabled when Persistent Memory V2 is active.
+    session_id = before_request(request_data, n_context=4) if legacy_memory_enabled else None
     model = getattr(request_data, "model", None) or settings.model
     provider = settings.provider_type
 
     response = service.create_message(request_data)
 
-    # MEMORY: Hook after processing
-    if MEMORY_HOOKS_AVAILABLE:
+    # MEMORY: Legacy hook after processing. Disabled when Persistent Memory V2 is active.
+    if legacy_memory_enabled:
         return after_response(session_id, response, request_data, model, provider)
     return response
 
