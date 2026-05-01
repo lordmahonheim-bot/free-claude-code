@@ -66,6 +66,16 @@ profiles:
       cost: 0.05
       privacy: 0.05
 
+  claude-code-fast:
+    default_ring: claude_code_fast
+    weights:
+      latency: 0.45
+      stability: 0.25
+      tool_use: 0.15
+      quality: 0.10
+      cost: 0.05
+      privacy: 0.00
+
 rings:
   code_agentic:
     - model_ref: cloudflare/@cf/moonshotai/kimi-k2.6
@@ -465,3 +475,25 @@ rings:
       priority: 1
       weight: 0.01
       capabilities: [chat, streaming, rate_limit, thinking, safety]
+
+  claude_code_fast:
+    - model_ref: google/gemini-2.5-flash
+      priority: 100
+      weight: 1.0
+      capabilities: [chat, streaming, tools, rate_limit]
+    - model_ref: open_router/mistralai/devstral-2512
+      priority: 92
+      weight: 1.0
+      capabilities: [chat, streaming, tools, code]
+    - model_ref: open_router/minimax/minimax-m2.7
+      priority: 88
+      weight: 1.0
+      capabilities: [chat, streaming, tools]
+    - model_ref: groq/qwen/qwen3-32b
+      priority: 82
+      weight: 1.0
+      capabilities: [chat, streaming, tools, rate_limit, fast]
+    - model_ref: cloudflare/@cf/moonshotai/kimi-k2.6
+      priority: 78
+      weight: 1.0
+      capabilities: [chat, streaming, tools, long_context]
