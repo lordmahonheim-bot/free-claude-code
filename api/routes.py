@@ -95,14 +95,6 @@ async def create_message(
         MEMORY_HOOKS_AVAILABLE and not settings.enable_persistent_memory_v2
     )
 
-    # MEMORY: Legacy Bonjour short-circuit. Disabled when Persistent Memory V2 is active.
-    if legacy_memory_enabled:
-        from memory.hooks import _create_bonjour_response
-
-        bonjour_response = _create_bonjour_response(request_data)
-        if bonjour_response:
-            return bonjour_response
-
     # MEMORY: Legacy hook before processing. Disabled when Persistent Memory V2 is active.
     session_id = before_request(request_data, n_context=4) if legacy_memory_enabled else None
     model = getattr(request_data, "model", None) or settings.model
