@@ -104,7 +104,15 @@ class PersistentMemoryMiddleware:
         metadata: dict[str, Any] | None = None,
     ) -> str:
         """Persist a turn reconstructed from an SSE stream capture result."""
-        status = "failed" if stream_result.errors else "completed"
+        if stream_result.errors:
+            status = "failed"
+        elif stream_result.stop_reason == "max_tokens":
+            status = "truncated"
+        elif not stream_result.text.strip():
+            status = "empty"
+        else:
+            status = "completed"
+
         effective_model = model or stream_result.model
 
         turn_metadata = dict(metadata or {})

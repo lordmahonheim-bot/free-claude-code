@@ -113,3 +113,59 @@ def test_disabled_middleware_does_not_inject(tmp_path):
     assert session_id is None
     assert injected == request
     assert injected is not request
+
+
+def test_store_stream_result_marks_truncated_on_max_tokens(tmp_path):
+    store = PersistentMemoryStore(tmp_path / "memory_v2.db")
+    middleware = PersistentMemoryMiddleware(store=store)
+    session_id = store.get_or_create_session(source_session_id="session-truncated")
+
+    request = {
+        "messages": [{"role": "user", "content": "Question tronquée"}],
+    }
+    stream_result = StreamCaptureResult(
+        text=" ",
+        model="stream-model",
+        stop_reason="max_tokens",
+        errors=[],
+    )
+
+    middleware.store_stream_result(
+        session_id=session_id,
+        request_payload=request,
+        stream_result=stream_result,
+        provider="stream_provider",
+    )
+
+    rows = store.search("Question tronquée")
+    assert len(rows) == 1
+    assert rows[0]["assistant_text"] == " "
+    assert rows[0]["status"] == "truncated"
+
+
+def test_store_stream_result_marks_empty_when_no_text(tmp_path):
+    store = PersistentMemoryStore(tmp_path / "memory_v2.db")
+    middleware = PersistentMemoryMiddleware(store=store)
+    session_id = store.get_or_create_session(source_session_id="session-empty")
+
+    request = {
+        "messages": [{"role": "user", "content": "Question vide"}],
+    }
+    stream_result = StreamCaptureResult(
+        text="   ",
+        model="stream-model",
+        stop_reason="end_turn",
+        errors=[],
+    )
+
+    middleware.store_stream_result(
+        session_id=session_id,
+        request_payload=request,
+        stream_result=stream_result,
+        provider="stream_provider",
+    )
+
+    rows = store.search("Question vide")
+    assert len(rows) == 1
+    assert rows[0]["assistant_text"] == "   "
+    assert rows[0]["status"] == "empty"

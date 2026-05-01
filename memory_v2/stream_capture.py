@@ -22,9 +22,14 @@ class SSEStreamCapture:
         self.result = StreamCaptureResult()
 
     def feed_line(self, line: str | bytes) -> None:
+        """Feed one SSE line or one multi-line SSE chunk."""
         if isinstance(line, bytes):
             line = line.decode("utf-8", errors="replace")
 
+        for candidate in line.splitlines():
+            self._feed_single_line(candidate)
+
+    def _feed_single_line(self, line: str) -> None:
         line = line.strip()
 
         if not line.startswith("data:"):
