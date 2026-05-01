@@ -56,6 +56,16 @@ profiles:
       quality: 0.05
       tool_use: 0.05
 
+  nvidia-ranked:
+    default_ring: nvidia_ranked
+    weights:
+      quality: 0.40
+      stability: 0.25
+      tool_use: 0.20
+      latency: 0.05
+      cost: 0.05
+      privacy: 0.05
+
 rings:
   code_agentic:
     - model_ref: cloudflare/@cf/moonshotai/kimi-k2.6
@@ -214,3 +224,244 @@ rings:
       priority: 80
       weight: 1.0
       capabilities: [chat, streaming, tools, native_anthropic, local]
+  nvidia_ranked:
+    - model_ref: nvidia_nim/moonshotai/kimi-k2.6
+      priority: 100
+      weight: 1.00
+      capabilities: [chat, streaming, rate_limit, thinking, tools]
+    - model_ref: nvidia_nim/qwen/qwen3-coder-480b-a35b-instruct
+      priority: 98
+      weight: 0.98
+      capabilities: [chat, streaming, rate_limit, code, tools]
+    - model_ref: nvidia_nim/z-ai/glm5
+      priority: 95
+      weight: 0.95
+      capabilities: [chat, streaming, rate_limit, thinking, tools]
+    - model_ref: nvidia_nim/z-ai/glm4.7
+      priority: 92
+      weight: 0.92
+      capabilities: [chat, streaming, rate_limit, thinking, tools]
+    - model_ref: nvidia_nim/qwen/qwen3.5-397b-a17b
+      priority: 90
+      weight: 0.90
+      capabilities: [chat, streaming, rate_limit, tools]
+    - model_ref: nvidia_nim/mistralai/mistral-large-3-675b-instruct-2512
+      priority: 88
+      weight: 0.88
+      capabilities: [chat, streaming, rate_limit, tools]
+    - model_ref: nvidia_nim/meta/llama-3.1-405b-instruct
+      priority: 86
+      weight: 0.86
+      capabilities: [chat, streaming, rate_limit, tools]
+    - model_ref: nvidia_nim/minimaxai/minimax-m2.7
+      priority: 84
+      weight: 0.84
+      capabilities: [chat, streaming, rate_limit, tools]
+    - model_ref: nvidia_nim/mistralai/devstral-2-123b-instruct-2512
+      priority: 82
+      weight: 0.82
+      capabilities: [chat, streaming, rate_limit, code, tools]
+    - model_ref: nvidia_nim/moonshotai/kimi-k2-instruct-0905
+      priority: 80
+      weight: 0.80
+      capabilities: [chat, streaming, rate_limit, thinking, tools]
+    - model_ref: nvidia_nim/qwen/qwen3.5-122b-a10b
+      priority: 75
+      weight: 0.75
+      capabilities: [chat, streaming, rate_limit, tools]
+    - model_ref: nvidia_nim/qwen/qwen3-next-80b-a3b-thinking
+      priority: 72
+      weight: 0.72
+      capabilities: [chat, streaming, rate_limit, thinking, tools]
+    - model_ref: nvidia_nim/qwen/qwen3-next-80b-a3b-instruct
+      priority: 70
+      weight: 0.70
+      capabilities: [chat, streaming, rate_limit, tools]
+    - model_ref: nvidia_nim/nvidia/nemotron-3-super-120b-a12b
+      priority: 68
+      weight: 0.68
+      capabilities: [chat, streaming, rate_limit, tools]
+    - model_ref: nvidia_nim/mistralai/mistral-medium-3.5-128b
+      priority: 65
+      weight: 0.65
+      capabilities: [chat, streaming, rate_limit, tools]
+    - model_ref: nvidia_nim/openai/gpt-oss-120b
+      priority: 62
+      weight: 0.62
+      capabilities: [chat, streaming, rate_limit, tools]
+    - model_ref: nvidia_nim/meta/llama-4-maverick-17b-128e-instruct
+      priority: 60
+      weight: 0.60
+      capabilities: [chat, streaming, rate_limit, tools]
+    - model_ref: nvidia_nim/nvidia/llama-3.3-nemotron-super-49b-v1.5
+      priority: 58
+      weight: 0.58
+      capabilities: [chat, streaming, rate_limit, tools]
+    - model_ref: nvidia_nim/nvidia/llama-3.3-nemotron-super-49b-v1
+      priority: 56
+      weight: 0.56
+      capabilities: [chat, streaming, rate_limit, tools]
+    - model_ref: nvidia_nim/meta/llama-3.3-70b-instruct
+      priority: 54
+      weight: 0.54
+      capabilities: [chat, streaming, rate_limit, tools]
+    - model_ref: nvidia_nim/meta/llama-3.1-70b-instruct
+      priority: 52
+      weight: 0.52
+      capabilities: [chat, streaming, rate_limit, tools]
+    - model_ref: nvidia_nim/abacusai/dracarys-llama-3.1-70b-instruct
+      priority: 50
+      weight: 0.50
+      capabilities: [chat, streaming, rate_limit, tools]
+    - model_ref: nvidia_nim/mistralai/mixtral-8x22b-instruct-v0.1
+      priority: 48
+      weight: 0.48
+      capabilities: [chat, streaming, rate_limit, tools]
+    - model_ref: nvidia_nim/mistralai/mistral-small-4-119b-2603
+      priority: 46
+      weight: 0.46
+      capabilities: [chat, streaming, rate_limit, tools]
+    - model_ref: nvidia_nim/mistralai/mistral-nemotron
+      priority: 44
+      weight: 0.44
+      capabilities: [chat, streaming, rate_limit, tools]
+    - model_ref: nvidia_nim/stockmark/stockmark-2-100b-instruct
+      priority: 42
+      weight: 0.42
+      capabilities: [chat, streaming, rate_limit, tools]
+    - model_ref: nvidia_nim/mistralai/magistral-small-2506
+      priority: 40
+      weight: 0.40
+      capabilities: [chat, streaming, rate_limit, tools]
+    - model_ref: nvidia_nim/qwen/qwen2.5-coder-32b-instruct
+      priority: 38
+      weight: 0.38
+      capabilities: [chat, streaming, rate_limit, code, tools]
+    - model_ref: nvidia_nim/bytedance/seed-oss-36b-instruct
+      priority: 36
+      weight: 0.36
+      capabilities: [chat, streaming, rate_limit, tools]
+    - model_ref: nvidia_nim/nvidia/nemotron-3-nano-omni-30b-a3b-reasoning
+      priority: 34
+      weight: 0.34
+      capabilities: [chat, streaming, rate_limit, thinking, tools]
+    - model_ref: nvidia_nim/nvidia/nemotron-3-nano-30b-a3b
+      priority: 32
+      weight: 0.32
+      capabilities: [chat, streaming, rate_limit, tools]
+    - model_ref: nvidia_nim/mistralai/ministral-14b-instruct-2512
+      priority: 30
+      weight: 0.30
+      capabilities: [chat, streaming, rate_limit, tools]
+    - model_ref: nvidia_nim/openai/gpt-oss-20b
+      priority: 28
+      weight: 0.28
+      capabilities: [chat, streaming, rate_limit]
+    - model_ref: nvidia_nim/google/gemma-3-12b-it
+      priority: 26
+      weight: 0.26
+      capabilities: [chat, streaming, rate_limit]
+    - model_ref: nvidia_nim/microsoft/phi-4-multimodal-instruct
+      priority: 24
+      weight: 0.24
+      capabilities: [chat, streaming, rate_limit, multimodal]
+    - model_ref: nvidia_nim/meta/llama-3.2-90b-vision-instruct
+      priority: 22
+      weight: 0.22
+      capabilities: [chat, streaming, rate_limit, multimodal]
+    - model_ref: nvidia_nim/meta/llama-3.2-11b-vision-instruct
+      priority: 20
+      weight: 0.20
+      capabilities: [chat, streaming, rate_limit, multimodal]
+    - model_ref: nvidia_nim/nvidia/nemotron-nano-12b-v2-vl
+      priority: 18
+      weight: 0.18
+      capabilities: [chat, streaming, rate_limit, multimodal]
+    - model_ref: nvidia_nim/nvidia/llama-3.1-nemotron-nano-vl-8b-v1
+      priority: 16
+      weight: 0.16
+      capabilities: [chat, streaming, rate_limit, multimodal]
+    - model_ref: nvidia_nim/meta/llama-3.1-8b-instruct
+      priority: 14
+      weight: 0.14
+      capabilities: [chat, streaming, rate_limit]
+    - model_ref: nvidia_nim/nvidia/nvidia-nemotron-nano-9b-v2
+      priority: 12
+      weight: 0.12
+      capabilities: [chat, streaming, rate_limit]
+    - model_ref: nvidia_nim/google/gemma-3n-e4b-it
+      priority: 10
+      weight: 0.10
+      capabilities: [chat, streaming, rate_limit]
+    - model_ref: nvidia_nim/google/gemma-3-4b-it
+      priority: 9
+      weight: 0.09
+      capabilities: [chat, streaming, rate_limit]
+    - model_ref: nvidia_nim/meta/llama-3.2-3b-instruct
+      priority: 8
+      weight: 0.08
+      capabilities: [chat, streaming, rate_limit]
+    - model_ref: nvidia_nim/nvidia/nemotron-mini-4b-instruct
+      priority: 7
+      weight: 0.07
+      capabilities: [chat, streaming, rate_limit]
+    - model_ref: nvidia_nim/upstage/solar-10.7b-instruct
+      priority: 6
+      weight: 0.06
+      capabilities: [chat, streaming, rate_limit]
+    - model_ref: nvidia_nim/sarvamai/sarvam-m
+      priority: 5
+      weight: 0.05
+      capabilities: [chat, streaming, rate_limit]
+    - model_ref: nvidia_nim/stepfun-ai/step-3.5-flash
+      priority: 5
+      weight: 0.05
+      capabilities: [chat, streaming, rate_limit]
+    - model_ref: nvidia_nim/mistralai/mixtral-8x7b-instruct-v0.1
+      priority: 5
+      weight: 0.05
+      capabilities: [chat, streaming, rate_limit]
+    - model_ref: nvidia_nim/google/gemma-3n-e2b-it
+      priority: 4
+      weight: 0.04
+      capabilities: [chat, streaming, rate_limit]
+    - model_ref: nvidia_nim/meta/llama-3.2-1b-instruct
+      priority: 3
+      weight: 0.03
+      capabilities: [chat, streaming, rate_limit]
+    - model_ref: nvidia_nim/nvidia/ising-calibration-1-35b-a3b
+      priority: 2
+      weight: 0.02
+      capabilities: [chat, streaming, rate_limit]
+    - model_ref: nvidia_nim/nvidia/riva-translate-4b-instruct-v1.1
+      priority: 1
+      weight: 0.01
+      capabilities: [chat, streaming, rate_limit, translate]
+    - model_ref: nvidia_nim/nvidia/gliner-pii
+      priority: 1
+      weight: 0.01
+      capabilities: [chat, streaming, rate_limit, pii]
+    - model_ref: nvidia_nim/meta/llama-guard-4-12b
+      priority: 1
+      weight: 0.01
+      capabilities: [chat, streaming, rate_limit, safety]
+    - model_ref: nvidia_nim/nvidia/llama-3.1-nemoguard-8b-content-safety
+      priority: 1
+      weight: 0.01
+      capabilities: [chat, streaming, rate_limit, safety]
+    - model_ref: nvidia_nim/nvidia/llama-3.1-nemoguard-8b-topic-control
+      priority: 1
+      weight: 0.01
+      capabilities: [chat, streaming, rate_limit, safety]
+    - model_ref: nvidia_nim/nvidia/llama-3.1-nemotron-safety-guard-8b-v3
+      priority: 1
+      weight: 0.01
+      capabilities: [chat, streaming, rate_limit, safety]
+    - model_ref: nvidia_nim/nvidia/nemotron-3-content-safety
+      priority: 1
+      weight: 0.01
+      capabilities: [chat, streaming, rate_limit, safety]
+    - model_ref: nvidia_nim/nvidia/nemotron-content-safety-reasoning-4b
+      priority: 1
+      weight: 0.01
+      capabilities: [chat, streaming, rate_limit, thinking, safety]
