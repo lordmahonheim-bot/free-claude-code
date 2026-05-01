@@ -178,6 +178,23 @@ class Settings(BaseSettings):
         validation_alias="PROVIDER_ROTATION_HEALTH_DB",
     )
 
+    enable_persistent_memory_v2: bool = Field(
+        default=False,
+        description="Enable Persistent Memory Core V2 for /v1/messages.",
+    )
+    persistent_memory_v2_db: str = Field(
+        default="memory_store/persistent_memory_v2.db",
+        description="SQLite database path for Persistent Memory Core V2.",
+    )
+    persistent_memory_v2_injection_limit: int = Field(
+        default=6,
+        description="Number of recent memory turns injected into requests.",
+    )
+    persistent_memory_v2_max_context_chars: int = Field(
+        default=12000,
+        description="Maximum characters for injected Persistent Memory V2 context.",
+    )
+
     # ==================== Per-Provider Proxy ====================
     nvidia_nim_proxy: str = Field(default="", validation_alias="NVIDIA_NIM_PROXY")
     open_router_proxy: str = Field(default="", validation_alias="OPENROUTER_PROXY")
