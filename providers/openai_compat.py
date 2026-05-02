@@ -55,6 +55,24 @@ def _iter_heuristic_tool_use_sse(
     yield sse.content_block_stop(block_idx)
 
 
+
+def _sanitize_provider_payload(value):
+    """Recursively remove None values before sending JSON to upstream providers.
+
+    Claude Code tool schemas may contain optional JSON-schema facets set to None.
+    Some OpenAI-compatible provider adapters validate numeric facets with comparisons
+    and can raise TypeError when None reaches that layer.
+    """
+    if isinstance(value, dict):
+        return {
+            key: _sanitize_provider_payload(item)
+            for key, item in value.items()
+            if item is not None
+        }
+    if isinstance(value, list):
+        return [_sanitize_provider_payload(item) for item in value]
+    return value
+
 class OpenAIChatTransport(BaseProvider):
     """Base for OpenAI-compatible ``/chat/completions`` adapters (NIM, …)."""
 
@@ -239,6 +257,7 @@ class OpenAIChatTransport(BaseProvider):
         )
 
         body = self._build_request_body(request, thinking_enabled=thinking_enabled)
+        body = _sanitize_provider_payload(body)
         thinking_enabled = self._is_thinking_enabled(request, thinking_enabled)
         req_tag = f" request_id={request_id}" if request_id else ""
         logger.info(
